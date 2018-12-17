@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="xcopy &quot;$(ProjectDir)MyStrategy.cs&quot; &quot;D:\Dmitry\Downloads\codeball_strat&quot; /y&#xD;&#xA;xcopy &quot;$(ProjectDir)Strategy\*&quot; &quot;D:\Dmitry\Downloads\codeball_strat&quot; /y&#xD;&#xA;" />
+  </Target>
+
+</Project>
