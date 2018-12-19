@@ -46,6 +46,11 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             if (turn != null)
                 return turn;
 
+            turn = TryBlockAir(robot, rules, game);
+
+            if (turn != null)
+                return turn;
+
             if (IsThisRobotClosestToBall(robot, game) || IsThisRobotTheLastHope(robot, game))
             {
                 return PlayForward(robot, rules, game);
@@ -54,6 +59,46 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             {
                 return PlaySupport(robot, rules, game);
             }
+        }
+
+        private ITurn TryBlockAir(Robot robot, Rules rules, Game game)
+        {
+            if (robot.touch && _BallXYZ.Z > 2.2 && game.ball.velocity_z < -10) //TODO
+            {
+                {
+                    const float dt = 0.25f;//TODO
+
+                    var ballDXYZ = new Vector3((float)(game.ball.velocity_x * dt),
+                                                    (float)(game.ball.velocity_z * dt),
+                                                    (float)(game.ball.velocity_y * dt - rules.GRAVITY * dt * dt / 2));
+
+                    var robotXYZB = TransformToBallSpace(_RobotXYZ + new Vector3((float)(robot.velocity_x * dt),
+                                                                                 (float)(robot.velocity_z * dt),
+                                                                                 3.85f)/*TODO*/);
+
+                    if (robotXYZB.Y < ballDXYZ.Y - 0.1 &&//TODO
+                        Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
+                        return new JumpTurn(_JumpSpeed);
+                }
+
+                {
+                    const float dt = 0.5f;//TODO
+
+                    var ballDXYZ = new Vector3((float)(game.ball.velocity_x * dt),
+                                                    (float)(game.ball.velocity_z * dt),
+                                                    (float)(game.ball.velocity_y * dt - rules.GRAVITY * dt * dt / 2));
+
+                    var robotXYZB = TransformToBallSpace(_RobotXYZ + new Vector3((float)(robot.velocity_x * dt),
+                                                                                 (float)(robot.velocity_z * dt),
+                                                                                 4.79f)/*TODO*/);
+
+                    if (robotXYZB.Y < ballDXYZ.Y - 0.1 &&//TODO
+                        Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
+                        return new JumpTurn(_JumpSpeed);
+                }
+            }
+
+            return null;
         }
 
         private bool IsThisRobotTheLastHope(Robot robot, Game game)
@@ -98,6 +143,9 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn TryStrike(Robot robot, Rules rules, Game game)
         {
+            if (!robot.touch)
+                return null;
+
             var danger = IsGoalInDanger();
 
             if (Vector3.Distance(_RobotXYZ, _BallXYZ) < game.ball.radius + robot.radius + (danger ? 2 * _StrikeDistance : _StrikeDistance))
@@ -122,13 +170,11 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             return null;
         }
 
-        private bool IsGoalInDanger()
-        {
-            return Vector2.Distance(_TeamGoalXY, _BallXY) < _GoalDangerDistance;
-        }
+        private bool IsGoalInDanger() => Vector2.Distance(_TeamGoalXY, _BallXY) < _GoalDangerDistance;
 
         private Vector2 TransformToRobotSpace(Vector2 v) => v - _RobotXY;
         private Vector2 TransformToBallSpace(Vector2 v) => v - _BallXY;
+        private Vector3 TransformToBallSpace(Vector3 v) => v - _BallXYZ;
         private Vector2 TransformFromBallSpace(Vector2 v) => v + _BallXY;
         private Vector2 TransformFromTeamGoalSpace(Vector2 v) => v + _TeamGoalXY;
     }
