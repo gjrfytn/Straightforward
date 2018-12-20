@@ -13,4 +13,8 @@
     <Exec Command="xcopy &quot;$(ProjectDir)MyStrategy.cs&quot; &quot;D:\Dmitry\Downloads\codeball_strat&quot; /y&#xD;&#xA;xcopy &quot;$(ProjectDir)Strategy\*&quot; &quot;D:\Dmitry\Downloads\codeball_strat&quot; /y&#xD;&#xA;" />
   </Target>
 
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="copy &quot;$(OutDir)Straightforward.dll&quot; &quot;$(OutDir)old\Straightforward.dll&quot; /y&#xD;&#xA;copy &quot;$(OutDir)Straightforward.deps.json&quot; &quot;$(OutDir)old\Straightforward.deps.json&quot; /y&#xD;&#xA;copy &quot;$(OutDir)Straightforward.runtimeconfig.json&quot; &quot;$(OutDir)old\Straightforward.runtimeconfig.json&quot; /y&#xD;&#xA;copy &quot;$(OutDir)Straightforward.runtimeconfig.dev.json&quot; &quot;$(OutDir)old\Straightforward.runtimeconfig.dev.json&quot; /y&#xD;&#xA;copy &quot;$(OutDir)Straightforward.pdb&quot; &quot;$(OutDir)old\Straightforward.pdb&quot; /y" />
+  </Target>
+
 </Project>

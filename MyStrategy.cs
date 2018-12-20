@@ -65,22 +65,26 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         {
             if (robot.touch && _BallXYZ.Z > 2.2 && game.ball.velocity_z < -10) //TODO
             {
+                var ballVel = new Vector3((float)game.ball.velocity_x, (float)game.ball.velocity_z, (float)game.ball.velocity_y);
+                var robotVel = new Vector2((float)robot.velocity_x, (float)robot.velocity_z);
+
+                if (System.Math.Abs(ScaleVectorToHorizontal(new Vector3(robotVel, 7.48f)).Length() - ScaleVectorToHorizontal(ballVel).Length()) > 5)
                 {
                     const float dt = 0.25f;//TODO
 
-                    var ballDXYZ = new Vector3((float)(game.ball.velocity_x * dt),
-                                                    (float)(game.ball.velocity_z * dt),
-                                                    (float)(game.ball.velocity_y * dt - rules.GRAVITY * dt * dt / 2));
+                    var ballDXYZ = new Vector3(ballVel.X * dt,
+                                               ballVel.Y * dt,
+                                               (float)(ballVel.Z * dt - rules.GRAVITY * dt * dt / 2));
 
-                    var robotXYZB = TransformToBallSpace(_RobotXYZ + new Vector3((float)(robot.velocity_x * dt),
-                                                                                 (float)(robot.velocity_z * dt),
+                    var robotXYZB = TransformToBallSpace(_RobotXYZ + new Vector3(robotVel.X * dt,
+                                                                                 robotVel.Y * dt,
                                                                                  3.85f)/*TODO*/);
 
-                    if (robotXYZB.Y < ballDXYZ.Y - 0.1 &&//TODO
-                        Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
+                    if (robotXYZB.Y < ballDXYZ.Y - 0.1 && Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
                         return new JumpTurn(_JumpSpeed);
                 }
 
+                if (System.Math.Abs(ScaleVectorToHorizontal(new Vector3(robotVel, 0)).Length() - ScaleVectorToHorizontal(ballVel).Length()) > 5)
                 {
                     const float dt = 0.5f;//TODO
 
@@ -92,14 +96,15 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                                                                                  (float)(robot.velocity_z * dt),
                                                                                  4.79f)/*TODO*/);
 
-                    if (robotXYZB.Y < ballDXYZ.Y - 0.1 &&//TODO
-                        Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
+                    if (robotXYZB.Y < ballDXYZ.Y - 0.1 && Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
                         return new JumpTurn(_JumpSpeed);
                 }
             }
 
             return null;
         }
+
+        private Vector3 ScaleVectorToHorizontal(Vector3 v) => new Vector3(1.1f * v.X, 1.3f * v.Y, 0.7f * v.Z);
 
         private bool IsThisRobotTheLastHope(Robot robot, Game game)
         {
@@ -133,7 +138,10 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         private ITurn PlayForward(Robot robot, Rules rules, Game game)
         {
             var fromEnemyGoalToBall = _BallXY - _EnemyGoalXY;
-            var targetPosB = _PaceDistance * Vector2.Normalize(fromEnemyGoalToBall);
+            var antiGoalDirectionB = 20 * Vector2.Normalize(fromEnemyGoalToBall);
+            var ballVel = new Vector2((float)game.ball.velocity_x, (float)game.ball.velocity_z);
+            var ballPosDirectionB = antiGoalDirectionB + ballVel;
+            var targetPosB = _PaceDistance * Vector2.Normalize(ballPosDirectionB);
             var targetPosO = TransformFromBallSpace(targetPosB);
             var targetPosR = TransformToRobotSpace(targetPosO);
             var accel = _Acceleration * Vector2.Normalize(targetPosR);
