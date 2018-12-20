@@ -63,7 +63,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn TryBlockAir(Robot robot, Rules rules, Game game)
         {
-            if (robot.touch && _BallXYZ.Z > 2.2 && game.ball.velocity_z < -10) //TODO
+            if (robot.touch && _BallXYZ.Z > 2.2) //TODO
             {
                 var ballVel = new Vector3((float)game.ball.velocity_x, (float)game.ball.velocity_z, (float)game.ball.velocity_y);
                 var robotVel = new Vector2((float)robot.velocity_x, (float)robot.velocity_z);
