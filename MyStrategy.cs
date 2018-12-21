@@ -88,12 +88,12 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 {
                     const float dt = 0.5f;//TODO
 
-                    var ballDXYZ = new Vector3((float)(game.ball.velocity_x * dt),
-                                                    (float)(game.ball.velocity_z * dt),
-                                                    (float)(game.ball.velocity_y * dt - rules.GRAVITY * dt * dt / 2));
+                    var ballDXYZ = new Vector3(ballVel.X * dt,
+                                               ballVel.Y * dt,
+                                               (float)(ballVel.Z * dt - rules.GRAVITY * dt * dt / 2));
 
-                    var robotXYZB = TransformToBallSpace(_RobotXYZ + new Vector3((float)(robot.velocity_x * dt),
-                                                                                 (float)(robot.velocity_z * dt),
+                    var robotXYZB = TransformToBallSpace(_RobotXYZ + new Vector3(robotVel.X * dt,
+                                                                                 robotVel.Y * dt,
                                                                                  4.79f)/*TODO*/);
 
                     if (robotXYZB.Y < ballDXYZ.Y - 0.1 && Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
