@@ -63,7 +63,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn TryBlockAir(Robot robot, Rules rules, Game game)
         {
-            if (robot.touch && _BallXYZ.Z > 2.2) //TODO
+            if (robot.touch && _BallXYZ.Z > 2.2 && _BallXY.Y > _RobotXY.Y) //TODO
             {
                 var ballVel = new Vector3((float)game.ball.velocity_x, (float)game.ball.velocity_z, (float)game.ball.velocity_y);
                 var robotVel = new Vector2((float)robot.velocity_x, (float)robot.velocity_z);
@@ -80,7 +80,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                                                                                  robotVel.Y * dt,
                                                                                  3.85f)/*TODO*/);
 
-                    if (robotXYZB.Y < ballDXYZ.Y - 0.1 && Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
+                    if ((ballDXYZ - robotXYZB).Y > 0 && Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
                         return new JumpTurn(_JumpSpeed);
                 }
 
@@ -96,7 +96,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                                                                                  robotVel.Y * dt,
                                                                                  4.79f)/*TODO*/);
 
-                    if (robotXYZB.Y < ballDXYZ.Y - 0.1 && Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
+                    if ((ballDXYZ - robotXYZB).Y > 0 && Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
                         return new JumpTurn(_JumpSpeed);
                 }
             }
