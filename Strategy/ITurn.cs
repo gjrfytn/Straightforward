@@ -2,7 +2,7 @@
 
 namespace Com.CodeGame.CodeBall2018.Strategy
 {
-    interface ITurn
+    internal interface ITurn
     {
         void Apply(Action action);
     }

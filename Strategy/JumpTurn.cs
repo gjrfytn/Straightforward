@@ -2,7 +2,7 @@
 
 namespace Com.CodeGame.CodeBall2018.Strategy
 {
-    class JumpTurn : ITurn
+    internal class JumpTurn : ITurn
     {
         private readonly double _JumpSpeed;
 

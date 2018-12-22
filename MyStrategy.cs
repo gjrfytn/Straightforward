@@ -171,23 +171,21 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn MakePath(Vector2 accel)
         {
-            if (accel.Y > 0 || _BallXY.Y > _RobotXY.Y || Vector3.Distance(_RobotXYZ, _BallXYZ) > 4)
-                return new MoveTurn(accel.X, 0, accel.Y);
-
-            var ballPos = TransformToRobotSpace(_BallXY);
-            var cos = Vector2.Dot(ballPos, accel) / (ballPos.Length() * accel.Length());
-            if (cos > 0.75)
+            if (accel.Y < 0 && _BallXY.Y < _RobotXY.Y && Vector3.Distance(_RobotXYZ, _BallXYZ) < 4)
             {
-                var goalPos = TransformToRobotSpace(_TeamGoalXY);
+                var ballPos = TransformToRobotSpace(_BallXY);
+                var cos = Vector2.Dot(ballPos, accel) / (ballPos.Length() * accel.Length());
+                if (cos > 0.75)
+                {
+                    var goalPos = TransformToRobotSpace(_TeamGoalXY);
 
-                var cross = Vector3.Cross(new Vector3(ballPos, 0), new Vector3(goalPos, 0));
+                    var cross = Vector3.Cross(new Vector3(ballPos, 0), new Vector3(goalPos, 0));
 
-                accel = Vector2.Transform(accel, Matrix3x2.CreateRotation(System.Math.Sign(cross.Z) * 0.733f));
-
-                return new MoveTurn(accel.X, 0, accel.Y);
+                    accel = Vector2.Transform(accel, Matrix3x2.CreateRotation(System.Math.Sign(cross.Z) * 0.733f));
+                }
             }
 
-            return new MoveTurn(accel.X, 0, accel.Y);
+            return new MoveTurn(accel);
         }
 
         private ITurn TryStrike(Robot robot, Rules rules, Game game)
