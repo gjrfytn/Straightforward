@@ -185,5 +185,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         private Vector3 TransformToBallSpace(Vector3 v) => v - _BallXYZ;
         private Vector2 TransformFromBallSpace(Vector2 v) => v + _BallXY;
         private Vector2 TransformFromTeamGoalSpace(Vector2 v) => v + _TeamGoalXY;
+
+        public string CustomRendering() => "";
     }
 }
