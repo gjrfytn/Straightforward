@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk.Model;
@@ -41,6 +42,8 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn MakeTurn(Robot robot, Rules rules, Game game)
         {
+            _Spheres.Clear();
+
             var turn = TryStrike(robot, rules, game);
 
             if (turn != null)
@@ -61,6 +64,14 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             }
         }
 
+        private static float GetJumpHeight(float dt, Rules rules)
+        {
+            const float robotJumpVel = 15.25f;
+            const float gravityCorrection = 0.65f;
+
+            return robotJumpVel * dt - ((float)rules.GRAVITY + gravityCorrection) * dt * dt / 2 + 1;
+        }
+
         private ITurn TryBlockAir(Robot robot, Rules rules, Game game)
         {
             if (robot.touch && _BallXYZ.Z > 2.2 && _BallXY.Y > _RobotXY.Y) //TODO
@@ -68,38 +79,39 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 var ballVel = new Vector3((float)game.ball.velocity_x, (float)game.ball.velocity_z, (float)game.ball.velocity_y);
                 var robotVel = new Vector2((float)robot.velocity_x, (float)robot.velocity_z);
 
-                if (System.Math.Abs(ScaleVectorToHorizontal(new Vector3(robotVel, 7.48f)).Length() - ScaleVectorToHorizontal(ballVel).Length()) > 5)
+                if (System.Math.Abs(ScaleVectorToHorizontal(new Vector3(robotVel, 7.48f)).Length() - ScaleVectorToHorizontal(ballVel).Length()) > 5) //TODO ballVel.Z - неправильно
                 {
                     const float dt = 0.25f;//TODO
 
-                    var ballDXYZ = new Vector3(ballVel.X * dt,
-                                               ballVel.Y * dt,
-                                               (float)(ballVel.Z * dt - rules.GRAVITY * dt * dt / 2));
-
-                    var robotXYZB = TransformToBallSpace(_RobotXYZ + new Vector3(robotVel.X * dt,
-                                                                                 robotVel.Y * dt,
-                                                                                 3.85f)/*TODO*/);
-
-                    if ((ballDXYZ - robotXYZB).Y > 0 && Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
-                        return new JumpTurn(_JumpSpeed);
+                    return JumpIfWillHitAfterDt(rules, ballVel, robotVel, dt);
                 }
 
                 if (System.Math.Abs(ScaleVectorToHorizontal(new Vector3(robotVel, 0)).Length() - ScaleVectorToHorizontal(ballVel).Length()) > 5)
                 {
                     const float dt = 0.5f;//TODO
 
-                    var ballDXYZ = new Vector3(ballVel.X * dt,
-                                               ballVel.Y * dt,
-                                               (float)(ballVel.Z * dt - rules.GRAVITY * dt * dt / 2));
-
-                    var robotXYZB = TransformToBallSpace(_RobotXYZ + new Vector3(robotVel.X * dt,
-                                                                                 robotVel.Y * dt,
-                                                                                 4.79f)/*TODO*/);
-
-                    if ((ballDXYZ - robotXYZB).Y > 0 && Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
-                        return new JumpTurn(_JumpSpeed);
+                    return JumpIfWillHitAfterDt(rules, ballVel, robotVel, dt);
                 }
             }
+
+            return null;
+        }
+
+        private ITurn JumpIfWillHitAfterDt(Rules rules, Vector3 ballVel, Vector2 robotVel, float dt)
+        {
+            var ballDXYZ = new Vector3(ballVel.X * dt,
+                                       ballVel.Y * dt,
+                                       (float)(ballVel.Z * dt - rules.GRAVITY * dt * dt / 2));
+
+            var robotXYZB = TransformToBallSpace(_RobotXYZ + new Vector3(robotVel.X * dt,
+                                                                         robotVel.Y * dt,
+                                                                         GetJumpHeight(dt, rules)));
+
+            _Spheres.Add((TransformFromBallSpace(ballDXYZ), 0.5f, new Vector3(1, 0, 0)));
+            _Spheres.Add((TransformFromBallSpace(robotXYZB), 0.5f, new Vector3(0, 1, 0)));
+
+            if ((ballDXYZ - robotXYZB).Y > 0 && Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
+                return new JumpTurn(_JumpSpeed);
 
             return null;
         }
@@ -184,8 +196,21 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         private Vector2 TransformToBallSpace(Vector2 v) => v - _BallXY;
         private Vector3 TransformToBallSpace(Vector3 v) => v - _BallXYZ;
         private Vector2 TransformFromBallSpace(Vector2 v) => v + _BallXY;
+        private Vector3 TransformFromBallSpace(Vector3 v) => v + _BallXYZ;
         private Vector2 TransformFromTeamGoalSpace(Vector2 v) => v + _TeamGoalXY;
 
-        public string CustomRendering() => "";
+        private List<(Vector3 pos, float r, Vector3 col)> _Spheres = new List<(Vector3 pos, float r, Vector3 col)>();
+
+        public string CustomRendering()
+        {
+            var json = "[";
+
+            foreach (var (pos, r, col) in _Spheres)
+            {
+                json += $"{{\"Sphere\":{{\"x\":{pos.X},\"y\":{pos.Z},\"z\":{pos.Y},\"radius\":{r},\"r\":{col.X},\"g\":{col.Y},\"b\":{col.Z},\"a\":{0.5}}}}},";
+            }
+
+            return json.Remove(json.Length - 1) + "]";
+        }
     }
 }
