@@ -14,6 +14,11 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         private const float _Acceleration = 100;
         private const float _JumpSpeed = 100;
         private const float _GoalDangerDistance = 20;
+
+        //Robot _Robot;
+        //Rules _Rules;
+        //Game _Game;
+
         private Vector2 _RobotXY;
         private Vector3 _RobotXYZ;
         private Vector2 _EnemyGoalXY;
@@ -32,6 +37,9 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private void Initialize(Robot robot, Rules rules, Game game)
         {
+            //_Robot = robot;
+            //_Rules = rules;
+            //_Game = game;
             _RobotXY = new Vector2((float)robot.x, (float)robot.z);
             _RobotXYZ = new Vector3((float)robot.x, (float)robot.z, (float)robot.y);
             _EnemyGoalXY = new Vector2(0, (float)rules.arena.depth / 2) + new Vector2(0, (float)rules.arena.goal_depth / 2);
@@ -110,9 +118,6 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                                                                          robotVel.Y * dt,
                                                                          GetJumpHeight(dt, rules)));
 
-            _Spheres.Add((TransformFromBallSpace(ballDXYZ), 0.5f, new Vector3(1, 0, 0)));
-            _Spheres.Add((TransformFromBallSpace(robotXYZB), 0.5f, new Vector3(0, 1, 0)));
-
             if ((ballDXYZ - robotXYZB).Y > 0 && Vector3.Distance(robotXYZB, ballDXYZ) < 2.95)//TODO
                 return new JumpTurn(_JumpSpeed);
 
@@ -147,7 +152,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             var targetPosR = TransformToRobotSpace(targetPosO);
             var accel = _Acceleration * Vector2.Normalize(targetPosR);
 
-            return new MoveTurn(accel.X, 0, accel.Y);
+            return MakePath(accel);
         }
 
         private ITurn PlayForward(Robot robot, Rules rules, Game game)
@@ -160,6 +165,27 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             var targetPosO = TransformFromBallSpace(targetPosB);
             var targetPosR = TransformToRobotSpace(targetPosO);
             var accel = _Acceleration * Vector2.Normalize(targetPosR);
+
+            return MakePath(accel);
+        }
+
+        private ITurn MakePath(Vector2 accel)
+        {
+            if (accel.Y > 0 || _BallXY.Y > _RobotXY.Y || Vector3.Distance(_RobotXYZ, _BallXYZ) > 4)
+                return new MoveTurn(accel.X, 0, accel.Y);
+
+            var ballPos = TransformToRobotSpace(_BallXY);
+            var cos = Vector2.Dot(ballPos, accel) / (ballPos.Length() * accel.Length());
+            if (cos > 0.75)
+            {
+                var goalPos = TransformToRobotSpace(_TeamGoalXY);
+
+                var cross = Vector3.Cross(new Vector3(ballPos, 0), new Vector3(goalPos, 0));
+
+                accel = Vector2.Transform(accel, Matrix3x2.CreateRotation(System.Math.Sign(cross.Z) * 0.733f));
+
+                return new MoveTurn(accel.X, 0, accel.Y);
+            }
 
             return new MoveTurn(accel.X, 0, accel.Y);
         }
@@ -198,6 +224,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         private Vector2 TransformToRobotSpace(Vector2 v) => v - _RobotXY;
         private Vector2 TransformToBallSpace(Vector2 v) => v - _BallXY;
         private Vector3 TransformToBallSpace(Vector3 v) => v - _BallXYZ;
+        private Vector2 TransformFromRobotSpace(Vector2 v) => v + _RobotXY;
         private Vector2 TransformFromBallSpace(Vector2 v) => v + _BallXY;
         private Vector3 TransformFromBallSpace(Vector3 v) => v + _BallXYZ;
         private Vector2 TransformFromTeamGoalSpace(Vector2 v) => v + _TeamGoalXY;
