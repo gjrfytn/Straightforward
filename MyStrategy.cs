@@ -83,7 +83,10 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 {
                     const float dt = 0.25f;//TODO
 
-                    return JumpIfWillHitAfterDt(rules, ballVel, robotVel, dt);
+                    var turn = JumpIfWillHitAfterDt(rules, ballVel, robotVel, dt);
+
+                    if (turn != null)
+                        return turn;
                 }
 
                 if (System.Math.Abs(ScaleVectorToHorizontal(new Vector3(robotVel, 0)).Length() - ScaleVectorToHorizontal(ballVel).Length()) > 5)
