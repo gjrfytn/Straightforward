@@ -194,7 +194,44 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private Vector2 GetBallGroundTouchPos()
         {
-            return _BallXY;
+            float t = 1;
+            float dt = 1;
+            bool? wasGreater = null;
+            while (true)
+            {
+                var ballXYZ = GetBallPosDt(t);
+
+                if (ballXYZ.Z > 1.8 && ballXYZ.Z < 2.2)
+                {
+                    _Spheres.Add((ballXYZ, 0.7f, new Vector3(1, 0, 0)));
+
+                    return new Vector2(ballXYZ.X, ballXYZ.Y);
+                }
+                else if (ballXYZ.Z > 2)
+                {
+                    if (wasGreater.HasValue && !wasGreater.Value)
+                    {
+                        dt /= 2;
+                    }
+
+                    wasGreater = true;
+
+                    t += dt;
+                }
+                else
+                {
+                    if (wasGreater.HasValue && wasGreater.Value)
+                    {
+                        dt /= 2;
+                    }
+
+                    wasGreater = false;
+
+                    t -= dt;
+                }
+            }
+
+            throw new System.Exception("Should not be here.");
         }
 
         private ITurn PlaySupport()
@@ -221,7 +258,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             var ballVelProjected = Vector2.Dot(ballVel, normal) * normal;
             var ballPosDirectionB = antiGoalDirectionB + ballVelProjected;
             var targetPosB = _PaceDistance * Vector2.Normalize(ballPosDirectionB);
-            var targetPosO = TransformFromBallSpace(targetPosB);
+            var targetPosO = targetPosB + ballPos;
             var targetPosR = TransformToRobotSpace(targetPosO);
 
             var normalizer = _BallXYZ.Z > 4 && targetPosR.Length() < 1 ? 10 : 1;
