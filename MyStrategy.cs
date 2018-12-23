@@ -25,6 +25,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         private Vector2 _TeamGoalXY;
         private Vector2 _BallXY;
         private Vector3 _BallXYZ;
+        private Vector3 _BallVel;
 
         public void Act(Robot me, Rules rules, Game game, Action action)
         {
@@ -46,6 +47,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             _TeamGoalXY = -_EnemyGoalXY;
             _BallXY = new Vector2((float)game.ball.x, (float)game.ball.z);
             _BallXYZ = new Vector3((float)game.ball.x, (float)game.ball.z, (float)game.ball.y);
+            _BallVel = new Vector3((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_z, (float)_Game.ball.velocity_y);
         }
 
         private ITurn MakeTurn()
@@ -95,23 +97,20 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn TryBlockAir()
         {
-            if (_BallXYZ.Z > 2.2 && _BallXY.Y > _RobotXY.Y) //TODO
+            if (_BallXYZ.Z > 2.2 && _BallXY.Y > _RobotXY.Y) //TODO !!!
             {
-                var ballVel = new Vector3((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_z, (float)_Game.ball.velocity_y);
                 var robotVel = new Vector2((float)_Robot.velocity_x, (float)_Robot.velocity_z);
 
                 for (var dt = 0.1f; dt <= 0.5f; dt += 0.05f)
                 {
-                    var ballPos = _BallXYZ + new Vector3(ballVel.X * dt,
-                                                         ballVel.Y * dt,
-                                                         (float)(ballVel.Z * dt - _Rules.GRAVITY * dt * dt / 2));
+                    var ballPos = GetBallPosDt(dt);
 
                     var robotPos = _RobotXYZ + new Vector3(robotVel.X * dt,
                                                robotVel.Y * dt,
                                                GetJumpHeight(dt));
 
                     var robotVel2 = new Vector3(robotVel, GetJumpVelocity(dt));
-                    var ballVel2 = new Vector3(ballVel.X, ballVel.Y, (float)(ballVel.Z - _Rules.GRAVITY * dt));
+                    var ballVel2 = new Vector3(_BallVel.X, _BallVel.Y, (float)(_BallVel.Z - _Rules.GRAVITY * dt));
 
                     var ballToGoal = new Vector3(_EnemyGoalXY, (float)_Rules.arena.goal_height / 4) - ballPos;
                     var ballToRobot = robotPos - ballPos;
@@ -124,6 +123,37 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             }
 
             return null;
+        }
+
+        private Vector3 GetBallPosDt(float dt)
+        {
+            var pos = _BallXYZ + new Vector3(_BallVel.X * dt,
+                                              _BallVel.Y * dt,
+                                              (float)(_BallVel.Z * dt - _Rules.GRAVITY * dt * dt / 2));
+
+            var rightWall = (float)_Rules.arena.width / 2;
+            var leftWall = -rightWall;
+            if (pos.X > rightWall)
+            {
+                pos.X = rightWall - 0.7f * (pos.X - rightWall);
+            }
+            else if (pos.X < leftWall)
+            {
+                pos.X = leftWall - 0.7f * (pos.X - leftWall);
+            }
+
+            var frontWall = (float)_Rules.arena.depth / 2;
+            var backWall = -frontWall;
+            if (pos.Y > frontWall)
+            {
+                pos.Y = frontWall - 0.7f * (pos.Y - frontWall);
+            }
+            else if (pos.Y < backWall)
+            {
+                pos.Y = backWall - 0.7f * (pos.Y - backWall);
+            }
+
+            return pos;
         }
 
         private ITurn JumpIfWillHitAfterDt(Vector3 ballVel, Vector2 robotVel, float dt)
@@ -162,9 +192,16 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             return closestRobot.RobotId == _Robot.id;
         }
 
+        private Vector2 GetBallGroundTouchPos()
+        {
+            return _BallXY;
+        }
+
         private ITurn PlaySupport()
         {
-            var fromTeamGoalToBall = _BallXY - _TeamGoalXY;
+            var ballPos = _BallXYZ.Z > 3 ? GetBallGroundTouchPos() : _BallXY;
+
+            var fromTeamGoalToBall = ballPos - _TeamGoalXY;
             var targetPosG = fromTeamGoalToBall / _SupportDistance;
             var targetPosO = TransformFromTeamGoalSpace(targetPosG);
             var targetPosR = TransformToRobotSpace(targetPosO);
@@ -175,7 +212,9 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn PlayForward()
         {
-            var fromEnemyGoalToBall = _BallXY - _EnemyGoalXY;
+            var ballPos = _BallXYZ.Z > 3 ? GetBallGroundTouchPos() : _BallXY;
+
+            var fromEnemyGoalToBall = ballPos - _EnemyGoalXY;
             var antiGoalDirectionB = 15 * Vector2.Normalize(fromEnemyGoalToBall);
             var ballVel = new Vector2((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_z);
             var normal = Vector2.Normalize(new Vector2(-antiGoalDirectionB.Y, antiGoalDirectionB.X));
