@@ -57,19 +57,24 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             if (turn != null)
                 return turn;
 
-            turn = TryBlockAir();
-
-            if (turn != null)
-                return turn;
-
-            if (IsThisRobotClosestToBall() || IsThisRobotTheLastHope())
+            if (_Robot.touch)
             {
-                return PlayForward();
+                turn = TryBlockAir();
+
+                if (turn != null)
+                    return turn;
+
+                if (IsThisRobotClosestToBall() || IsThisRobotTheLastHope())
+                {
+                    return PlayForward();
+                }
+                else
+                {
+                    return PlaySupport();
+                }
             }
-            else
-            {
-                return PlaySupport();
-            }
+
+            return new EmptyTurn();
         }
 
         private float GetJumpHeight(float dt)
@@ -82,7 +87,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn TryBlockAir()
         {
-            if (_Robot.touch && _BallXYZ.Z > 2.2 && _BallXY.Y > _RobotXY.Y) //TODO
+            if (_BallXYZ.Z > 2.2 && _BallXY.Y > _RobotXY.Y) //TODO
             {
                 var ballVel = new Vector3((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_z, (float)_Game.ball.velocity_y);
                 var robotVel = new Vector2((float)_Robot.velocity_x, (float)_Robot.velocity_z);
@@ -192,12 +197,10 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn TryStrike()
         {
-            if (!_Robot.touch)
-                return null;
-
             var danger = IsGoalInDanger();
 
-            if (Vector3.Distance(_RobotXYZ, _BallXYZ) < _Game.ball.radius + _Robot.radius + (danger ? 2 * _StrikeDistance : _StrikeDistance))
+            var strikeRadius = _Robot.touch ? (danger ? 2 * _StrikeDistance : _StrikeDistance) : _Rules.ROBOT_MAX_RADIUS - _Rules.ROBOT_MIN_RADIUS;
+            if (Vector3.Distance(_RobotXYZ, _BallXYZ) < _Game.ball.radius + _Robot.radius + strikeRadius)
             {
                 var strikeDirection = new Vector3(Vector2.Normalize(-(_RobotXY - _BallXY)), 0);
 
