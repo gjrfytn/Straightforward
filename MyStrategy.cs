@@ -236,7 +236,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn PlaySupport()
         {
-            var ballPos = _BallXYZ.Z > 3 ? GetBallGroundTouchPos() : _BallXY;
+            var ballPos = _BallXYZ.Z > 4 ? GetBallGroundTouchPos() : _BallXY;
 
             var fromTeamGoalToBall = ballPos - _TeamGoalXY;
             var targetPosG = fromTeamGoalToBall / _SupportDistance;
@@ -249,7 +249,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn PlayForward()
         {
-            var ballPos = _BallXYZ.Z > 3 ? GetBallGroundTouchPos() : _BallXY;
+            var ballPos = _BallXYZ.Z > 4 ? GetBallGroundTouchPos() : _BallXY;
 
             var fromEnemyGoalToBall = ballPos - _EnemyGoalXY;
             var antiGoalDirectionB = 15 * Vector2.Normalize(fromEnemyGoalToBall);
