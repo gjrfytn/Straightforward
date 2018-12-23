@@ -184,7 +184,10 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             var targetPosB = _PaceDistance * Vector2.Normalize(ballPosDirectionB);
             var targetPosO = TransformFromBallSpace(targetPosB);
             var targetPosR = TransformToRobotSpace(targetPosO);
-            var accel = _Acceleration * Vector2.Normalize(targetPosR);
+
+            var normalizer = _BallXYZ.Z > 4 && targetPosR.Length() < 1 ? 10 : 1;
+
+            var accel = _Acceleration * Vector2.Normalize(targetPosR) / normalizer;
 
             return MakePath(accel);
         }
