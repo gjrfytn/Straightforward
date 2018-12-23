@@ -123,7 +123,12 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                                    .Where(i => Vector3.Distance(i.robotPos, i.ballPos) < 3);
 
                 if (strikes.Any())
-                    return new JumpTurn(_JumpSpeed);
+                {
+                    var strike = strikes.First();
+
+                    if ((strike.robotVel - strike.ballVel).Length() > 10)
+                        return new JumpTurn(_JumpSpeed);
+                }
             }
 
             return null;
