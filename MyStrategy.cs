@@ -92,22 +92,18 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 var ballVel = new Vector3((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_z, (float)_Game.ball.velocity_y);
                 var robotVel = new Vector2((float)_Robot.velocity_x, (float)_Robot.velocity_z);
 
-                if (System.Math.Abs(ScaleVectorToHorizontal(new Vector3(robotVel, 7.48f)).Length() - ScaleVectorToHorizontal(ballVel).Length()) > 5) //TODO ballVel.Z - неправильно
+                var dt = 0.25f;//TODO
+                if (System.Math.Abs(ScaleVectorToHorizontal(new Vector3(robotVel, 7.48f)).Length() - ScaleVectorToHorizontal(new Vector3(ballVel.X, ballVel.Y, (float)(ballVel.Z - _Rules.GRAVITY * 0.25f))).Length()) > 5) //TODO ballVel.Z - неправильно
                 {
-                    const float dt = 0.25f;//TODO
-
                     var turn = JumpIfWillHitAfterDt(ballVel, robotVel, dt);
 
                     if (turn != null)
                         return turn;
                 }
 
-                if (System.Math.Abs(ScaleVectorToHorizontal(new Vector3(robotVel, 0)).Length() - ScaleVectorToHorizontal(ballVel).Length()) > 5)
-                {
-                    const float dt = 0.5f;//TODO
-
+                dt = 0.5f;//TODO
+                if (System.Math.Abs(ScaleVectorToHorizontal(new Vector3(robotVel, 0)).Length() - ScaleVectorToHorizontal(new Vector3(ballVel.X, ballVel.Y, (float)(ballVel.Z - _Rules.GRAVITY * 0.5f))).Length()) > 5)
                     return JumpIfWillHitAfterDt(ballVel, robotVel, dt);
-                }
             }
 
             return null;
