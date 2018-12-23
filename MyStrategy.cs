@@ -100,8 +100,6 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 var ballVel = new Vector3((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_z, (float)_Game.ball.velocity_y);
                 var robotVel = new Vector2((float)_Robot.velocity_x, (float)_Robot.velocity_z);
 
-                var list = new List<(Vector3 ballPos, Vector3 robotPos, Vector3 ballVel, Vector3 robotVel)>();
-
                 for (var dt = 0.1f; dt <= 0.5f; dt += 0.05f)
                 {
                     var ballPos = _BallXYZ + new Vector3(ballVel.X * dt,
@@ -113,20 +111,14 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                                                GetJumpHeight(dt));
 
                     var robotVel2 = new Vector3(robotVel, GetJumpVelocity(dt));
-
                     var ballVel2 = new Vector3(ballVel.X, ballVel.Y, (float)(ballVel.Z - _Rules.GRAVITY * dt));
 
-                    list.Add((ballPos, robotPos, ballVel2, robotVel2));
-                }
+                    var ballToGoal = new Vector3(_EnemyGoalXY, (float)_Rules.arena.goal_height / 4) - ballPos;
+                    var ballToRobot = robotPos - ballPos;
 
-                var strikes = list.TakeWhile(i => i.robotPos.Y < i.ballPos.Y)
-                                   .Where(i => Vector3.Distance(i.robotPos, i.ballPos) < 3);
+                    var dot = Vector3.Dot(ballToRobot, ballToGoal) / ballToGoal.Length();
 
-                if (strikes.Any())
-                {
-                    var strike = strikes.First();
-
-                    if ((strike.robotVel - strike.ballVel).Length() > 10)
+                    if (dot < 0 && Vector3.Distance(robotPos, ballPos) < 3 && (robotVel2 - ballVel2).Length() > 10)
                         return new JumpTurn(_JumpSpeed);
                 }
             }
