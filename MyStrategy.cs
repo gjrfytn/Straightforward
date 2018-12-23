@@ -10,7 +10,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
     {
         private const float _PaceDistance = 2;
         private const float _StrikeDistance = 0.1f;
-        private const float _SupportDistance = 1.3f;
+        private const float _SupportDistance = 1.4f;
         private const float _Acceleration = 100;
         private const float _JumpSpeed = 100;
         private const float _GoalDangerDistance = 20;
