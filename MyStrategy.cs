@@ -158,9 +158,11 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         private ITurn PlayForward()
         {
             var fromEnemyGoalToBall = _BallXY - _EnemyGoalXY;
-            var antiGoalDirectionB = 20 * Vector2.Normalize(fromEnemyGoalToBall);
+            var antiGoalDirectionB = 15 * Vector2.Normalize(fromEnemyGoalToBall);
             var ballVel = new Vector2((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_z);
-            var ballPosDirectionB = antiGoalDirectionB + ballVel;
+            var normal = Vector2.Normalize(new Vector2(-antiGoalDirectionB.Y, antiGoalDirectionB.X));
+            var ballVelProjected = Vector2.Dot(ballVel, normal) * normal;
+            var ballPosDirectionB = antiGoalDirectionB + ballVelProjected;
             var targetPosB = _PaceDistance * Vector2.Normalize(ballPosDirectionB);
             var targetPosO = TransformFromBallSpace(targetPosB);
             var targetPosR = TransformToRobotSpace(targetPosO);
