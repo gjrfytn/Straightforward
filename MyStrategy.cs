@@ -77,12 +77,20 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             return new EmptyTurn();
         }
 
+        private float GetJumpVelocity(float dt)
+        {
+            const float robotJumpVel = 15.25f;
+            const float gravityCorrection = 0.65f;
+
+            return robotJumpVel - ((float)_Rules.GRAVITY + gravityCorrection) * dt;
+        }
+
         private float GetJumpHeight(float dt)
         {
             const float robotJumpVel = 15.25f;
             const float gravityCorrection = 0.65f;
 
-            return robotJumpVel * dt - ((float)_Rules.GRAVITY + gravityCorrection) * dt * dt / 2 + 1;
+            return robotJumpVel * dt - ((float)_Rules.GRAVITY + gravityCorrection) * dt * dt / 2;
         }
 
         private ITurn TryBlockAir()
@@ -92,18 +100,30 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 var ballVel = new Vector3((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_z, (float)_Game.ball.velocity_y);
                 var robotVel = new Vector2((float)_Robot.velocity_x, (float)_Robot.velocity_z);
 
-                var dt = 0.25f;//TODO
-                if (System.Math.Abs(ScaleVectorToHorizontal(new Vector3(robotVel, 7.48f)).Length() - ScaleVectorToHorizontal(new Vector3(ballVel.X, ballVel.Y, (float)(ballVel.Z - _Rules.GRAVITY * 0.25f))).Length()) > 5) //TODO ballVel.Z - неправильно
-                {
-                    var turn = JumpIfWillHitAfterDt(ballVel, robotVel, dt);
+                var list = new List<(Vector3 ballPos, Vector3 robotPos, Vector3 ballVel, Vector3 robotVel)>();
 
-                    if (turn != null)
-                        return turn;
+                for (var dt = 0.1f; dt <= 0.5f; dt += 0.05f)
+                {
+                    var ballPos = _BallXYZ + new Vector3(ballVel.X * dt,
+                                                         ballVel.Y * dt,
+                                                         (float)(ballVel.Z * dt - _Rules.GRAVITY * dt * dt / 2));
+
+                    var robotPos = _RobotXYZ + new Vector3(robotVel.X * dt,
+                                               robotVel.Y * dt,
+                                               GetJumpHeight(dt));
+
+                    var robotVel2 = new Vector3(robotVel, GetJumpVelocity(dt));
+
+                    var ballVel2 = new Vector3(ballVel.X, ballVel.Y, (float)(ballVel.Z - _Rules.GRAVITY * dt));
+
+                    list.Add((ballPos, robotPos, ballVel2, robotVel2));
                 }
 
-                dt = 0.5f;//TODO
-                if (System.Math.Abs(ScaleVectorToHorizontal(new Vector3(robotVel, 0)).Length() - ScaleVectorToHorizontal(new Vector3(ballVel.X, ballVel.Y, (float)(ballVel.Z - _Rules.GRAVITY * 0.5f))).Length()) > 5)
-                    return JumpIfWillHitAfterDt(ballVel, robotVel, dt);
+                var strikes = list.TakeWhile(i => i.robotPos.Y < i.ballPos.Y)
+                                   .Where(i => Vector3.Distance(i.robotPos, i.ballPos) < 3);
+
+                if (strikes.Any())
+                    return new JumpTurn(_JumpSpeed);
             }
 
             return null;
@@ -221,6 +241,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         private bool IsGoalInDanger() => Vector2.Distance(_TeamGoalXY, _BallXY) < _GoalDangerDistance;
 
         private Vector2 TransformToRobotSpace(Vector2 v) => v - _RobotXY;
+        private Vector3 TransformToRobotSpace(Vector3 v) => v - _RobotXYZ;
         private Vector2 TransformToBallSpace(Vector2 v) => v - _BallXY;
         private Vector3 TransformToBallSpace(Vector3 v) => v - _BallXYZ;
         private Vector2 TransformFromRobotSpace(Vector2 v) => v + _RobotXY;
