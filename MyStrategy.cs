@@ -202,12 +202,9 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 var ballXYZ = GetBallPosDt(t);
 
                 if (ballXYZ.Z > h - 0.2f && ballXYZ.Z < h + 0.2f)
-                {
-                    _Spheres.Add((ballXYZ, 0.7f, new Vector3(1, 0, 0))); //TODO
-
                     return new Vector2(ballXYZ.X, ballXYZ.Y);
-                }
-                else if (ballXYZ.Z > h)
+
+                if (ballXYZ.Z > h)
                 {
                     if (wasGreater.HasValue && !wasGreater.Value)
                     {
