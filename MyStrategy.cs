@@ -216,7 +216,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn PlaySupport()
         {
-            var ballPos = _BallXYZ.Z > _BallLandingPredictionMinHeight ? GetBallPosAtHeight((float)_Game.ball.radius) : _BallXY;
+            var ballPos = PredictBallPosition();
 
             var fromTeamGoalToBall = ballPos - _TeamGoalXY;
             var targetPosG = fromTeamGoalToBall / _SupportDistanceDivider;
@@ -229,19 +229,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn PlayForward()
         {
-            Vector2 ballPos;
-            if (_BallXYZ.Z > _BallLandingPredictionMinHeight)
-            {
-                ballPos = GetBallPosAtHeight((float)_Game.ball.radius);
-
-                if (_BallVel.Y > 0)
-                {
-                    const float ratio = 0.75f;
-                    ballPos = Vector2.Lerp(_BallXY, ballPos, ratio);
-                }
-            }
-            else
-                ballPos = _BallXY;
+            var ballPos = PredictBallPosition();
 
             var fromEnemyGoalToBall = ballPos - _EnemyGoalXY;
             const int antiGoalVectorLength = 15;
@@ -262,6 +250,25 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             var accel = _Acceleration * Vector2.Normalize(targetPosR) / normalizer;
 
             return MakePath(accel);
+        }
+
+        private Vector2 PredictBallPosition()
+        {
+            Vector2 ballPos;
+            if (_BallXYZ.Z > _BallLandingPredictionMinHeight)
+            {
+                ballPos = GetBallPosAtHeight((float)_Game.ball.radius);
+
+                if (_BallVel.Y > 0)
+                {
+                    const float ratio = 0.75f;
+                    ballPos = Vector2.Lerp(_BallXY, ballPos, ratio);
+                }
+            }
+            else
+                ballPos = _BallXY;
+
+            return ballPos;
         }
 
         private ITurn MakePath(Vector2 accel)
