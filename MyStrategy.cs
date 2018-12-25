@@ -229,7 +229,19 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn PlayForward()
         {
-            var ballPos = _BallXYZ.Z > _BallLandingPredictionMinHeight ? GetBallPosAtHeight((float)_Game.ball.radius) : _BallXY;
+            Vector2 ballPos;
+            if (_BallXYZ.Z > _BallLandingPredictionMinHeight)
+            {
+                ballPos = GetBallPosAtHeight((float)_Game.ball.radius);
+
+                if (_BallVel.Y > 0)
+                {
+                    const float ratio = 0.75f;
+                    ballPos = Vector2.Lerp(_BallXY, ballPos, ratio);
+                }
+            }
+            else
+                ballPos = _BallXY;
 
             var fromEnemyGoalToBall = ballPos - _EnemyGoalXY;
             const int antiGoalVectorLength = 15;
