@@ -301,7 +301,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             var strikeRadius = _Robot.touch ? (danger ? dangerStrikeDistanceMult * _StrikeDistance : _StrikeDistance) : _Rules.ROBOT_MAX_RADIUS - _Rules.ROBOT_MIN_RADIUS;
             if (Vector3.Distance(_RobotXYZ, _BallXYZ) < _Game.ball.radius + _Robot.radius + strikeRadius)
             {
-                var strikeDirection = new Vector3(Vector2.Normalize(-(_RobotXY - _BallXY)), 0);
+                var strikeDirection = new Vector3(Vector2.Normalize(_BallXY - _RobotXY), 0);
 
                 if (danger)
                 {
