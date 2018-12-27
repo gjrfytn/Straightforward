@@ -174,7 +174,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             return closestRobot.RobotId == _Robot.id;
         }
 
-        private Vector2 GetBallPosAtHeight(float h)
+        private (Vector2 pos, float dt) GetBallPosAtHeight(float h)
         {
             float t = 1;
             float dt = 1;
@@ -185,7 +185,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
                 const float errorEpsilon = 0.2f;
                 if (ballXYZ.Z > h - errorEpsilon && ballXYZ.Z < h + errorEpsilon)
-                    return new Vector2(ballXYZ.X, ballXYZ.Y);
+                    return (new Vector2(ballXYZ.X, ballXYZ.Y), t);
 
                 if (ballXYZ.Z > h)
                 {
@@ -216,7 +216,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn PlaySupport()
         {
-            var ballPos = PredictBallPosition();
+            var ballPos = PredictBallPositionForSupport();
 
             var fromTeamGoalToBall = ballPos - _TeamGoalXY;
             var targetPosG = fromTeamGoalToBall / _SupportDistanceDivider;
@@ -229,13 +229,27 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn PlayForward()
         {
-            var ballPos = PredictBallPosition();
+            Vector2 ballPos;
+            var speed = _Acceleration;
+            if (_BallXYZ.Z > _BallLandingPredictionMinHeight)
+            {
+                float dt;
+                (ballPos, dt) = GetBallPosAtHeight((float)_Game.ball.radius);
+
+                if (_BallVel.Y > 0 && _RobotXY.Y < _BallXY.Y)
+                {
+                    var dist = Vector2.Distance(_RobotXY, _BallXY);
+                    speed = dist / dt;
+                }
+            }
+            else
+                ballPos = _BallXY;
 
             var fromEnemyGoalToBall = ballPos - _EnemyGoalXY;
             const int antiGoalVectorLength = 15;
             var antiGoalDirectionB = antiGoalVectorLength * Vector2.Normalize(fromEnemyGoalToBall);
             var ballVel = new Vector2((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_z);
-            var normal = Vector2.Normalize(new Vector2(-antiGoalDirectionB.Y, antiGoalDirectionB.X));
+            var normal = GetNormal(antiGoalDirectionB);
             var ballVelProjected = Vector2.Dot(ballVel, normal) * normal;
             var ballPosDirectionB = antiGoalDirectionB + ballVelProjected;
             var targetPosB = _ForwardPaceDistance * Vector2.Normalize(ballPosDirectionB);
@@ -245,19 +259,41 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             const int DecelerationBallMinHeight = 4;
             const int DecelerationToTargetPosDist = 1;
             const int DecelerationRate = 10;
-            var normalizer = _BallXYZ.Z > DecelerationBallMinHeight && targetPosR.Length() < DecelerationToTargetPosDist ? DecelerationRate : 1;
+            var normalizer = _BallXYZ.Z > DecelerationBallMinHeight && targetPosR.Length() < DecelerationToTargetPosDist ? DecelerationRate : 1; //TODO Сделать неравномерный разгон.
 
-            var accel = _Acceleration * Vector2.Normalize(targetPosR) / normalizer;
+            var accel = speed * Vector2.Normalize(targetPosR);
 
-            return MakePath(accel);
+            if (speed < _Rules.ROBOT_MAX_GROUND_SPEED)
+            {
+                var robotToBall = ballPos - _RobotXY;
+                var targetIsBehindTheBall = Vector2.Dot(robotToBall, targetPosB) > 0;
+
+                var strafeDir = targetIsBehindTheBall ? Vector2.Normalize(targetPosB) : GetNormal(targetPosB);
+
+                var devation = Vector2.Dot(robotToBall, strafeDir);
+                if (devation < 0)
+                {
+                    strafeDir = -strafeDir;
+                    devation = -devation;
+                }
+
+                var speedReserve = (float)_Rules.ROBOT_MAX_GROUND_SPEED - speed;
+                var strafeVel = System.Math.Clamp(devation, 0, speedReserve) * strafeDir;
+
+                accel = accel + strafeVel;
+            }
+
+            return MakePath(accel / normalizer);
         }
 
-        private Vector2 PredictBallPosition()
+        private static Vector2 GetNormal(Vector2 v) => Vector2.Normalize(new Vector2(-v.Y, v.X));
+
+        private Vector2 PredictBallPositionForSupport()
         {
             Vector2 ballPos;
             if (_BallXYZ.Z > _BallLandingPredictionMinHeight)
             {
-                ballPos = GetBallPosAtHeight((float)_Game.ball.radius);
+                ballPos = GetBallPosAtHeight((float)_Game.ball.radius).pos;
 
                 if (_BallVel.Y > 0)
                 {
@@ -274,7 +310,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         private ITurn MakePath(Vector2 accel)
         {
             const int fallbackBallAvoidDist = 1;
-            if (accel.Y < 0 && _BallXY.Y < _RobotXY.Y && Vector3.Distance(_RobotXYZ, _BallXYZ) < _Robot.radius + _Game.ball.radius + fallbackBallAvoidDist)
+            if (accel.Y < 0 && _BallXY.Y < _RobotXY.Y && Vector3.Distance(_RobotXYZ, _BallXYZ) < _Robot.radius + _Game.ball.radius + fallbackBallAvoidDist) //TODO avoid falling ball
             {
                 var ballPos = TransformToRobotSpace(_BallXY);
                 var cos = Vector2.Dot(ballPos, accel) / (ballPos.Length() * accel.Length());
