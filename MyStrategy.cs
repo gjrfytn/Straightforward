@@ -236,6 +236,9 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 float dt;
                 (ballPos, dt) = GetBallPosAtHeight((float)_Game.ball.radius);
 
+                const float ratio = 0.8f;
+                ballPos = Vector2.Lerp(_BallXY, ballPos, ratio); //TODO Костыль? Изучить.
+
                 if (_BallVel.Y > 0 && _RobotXY.Y < _BallXY.Y)
                 {
                     var dist = Vector2.Distance(_RobotXY, _BallXY);
