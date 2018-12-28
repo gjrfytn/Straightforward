@@ -229,6 +229,9 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn PlayForward()
         {
+            if (_Robot.touch && _Robot.touch_normal_y > -0.1f && _Robot.touch_normal_y < 0.1f && !IsGoalInDanger() && Vector2.Distance(_RobotXY, _BallXY) > 8) //TODO
+                return new JumpTurn(_JumpSpeed);
+
             Vector2 ballPos;
             var speed = _Acceleration;
             if (_BallXYZ.Z > _BallLandingPredictionMinHeight)
@@ -247,7 +250,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             }
             else
                 ballPos = _BallXY;
-            
+
             var fromEnemyGoalToBall = ballPos - _EnemyGoalXY;
             const int antiGoalVectorLength = 15;
             var antiGoalDirectionB = antiGoalVectorLength * Vector2.Normalize(fromEnemyGoalToBall);
