@@ -95,7 +95,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 var initialRobotVel = new Vector2((float)_Robot.velocity_x, (float)_Robot.velocity_z);
                 var initialCollisionVel = GetCollisionVelocity(0, _RobotXYZ, initialRobotVel);
 
-                const int requiredVelDiff = 25;
+                const int requiredVelDiff = 20;
                 if (initialCollisionVel > requiredVelDiff)
                     return new JumpTurn(_JumpSpeed);
 
@@ -112,7 +112,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
                     var colVel = GetCollisionVelocity(dt, currentRobotPos, currentRobotVel);
 
-                    if (colVel > initialCollisionVel)
+                    if (colVel > requiredVelDiff)
                         return new MoveTurn(_Acceleration * acceleration); //TODO По идее не нужно умножать.
                 }
             }
