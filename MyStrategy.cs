@@ -133,25 +133,22 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             var rightWall = (float)_Rules.arena.width / 2;
             var leftWall = -rightWall;
             const float wallDampingCoef = 0.7f;
-            if (pos.X > rightWall)
-            {
-                pos.X = rightWall - wallDampingCoef * (pos.X - rightWall);
-            }
-            else if (pos.X < leftWall)
-            {
-                pos.X = leftWall - wallDampingCoef * (pos.X - leftWall);
-            }
+            var ballRadius = (float)_Rules.BALL_RADIUS;
+
+            if (pos.X + ballRadius > rightWall)
+                pos.X = rightWall - ballRadius - wallDampingCoef * (pos.X + ballRadius - rightWall);
+            else if (pos.X - ballRadius < leftWall)
+                pos.X = leftWall + ballRadius - wallDampingCoef * (pos.X - ballRadius - leftWall);
 
             var frontWall = (float)_Rules.arena.depth / 2;
             var backWall = -frontWall;
-            if (pos.Y > frontWall)
-            {
-                pos.Y = frontWall - wallDampingCoef * (pos.Y - frontWall);
-            }
-            else if (pos.Y < backWall)
-            {
-                pos.Y = backWall - wallDampingCoef * (pos.Y - backWall);
-            }
+            var enemyGoalShrinkValue = 0.5f;
+
+            //TODO Refactor
+            if (pos.Y + ballRadius > frontWall && (pos.X < -_Rules.arena.goal_width / 2 + enemyGoalShrinkValue || pos.X > _Rules.arena.goal_width / 2 - enemyGoalShrinkValue || pos.Z > _Rules.arena.goal_height - enemyGoalShrinkValue)) //TODO Искусственно уменьшать зону ворот для обнаружения возможных отскоков?
+                pos.Y = frontWall - ballRadius - wallDampingCoef * (pos.Y + ballRadius - frontWall);
+            else if (pos.Y - ballRadius < backWall && (pos.X < -_Rules.arena.goal_width / 2 || pos.X > _Rules.arena.goal_width / 2 || pos.Z > _Rules.arena.goal_height))
+                pos.Y = backWall + ballRadius - wallDampingCoef * (pos.Y - ballRadius - backWall);
 
             return pos;
         }
@@ -247,7 +244,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             }
             else
                 ballPos = _BallXY;
-            
+
             var fromEnemyGoalToBall = ballPos - _EnemyGoalXY;
             const int antiGoalVectorLength = 15;
             var antiGoalDirectionB = antiGoalVectorLength * Vector2.Normalize(fromEnemyGoalToBall);
