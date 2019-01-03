@@ -310,20 +310,25 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         private ITurn MakePath(Vector2 accel)
         {
             var ballPos = TransformToRobotSpace(_BallXY);
-
             const int fallbackBallAvoidDist = 1;
-            if (accel.Y < 0 && _BallXY.Y < _RobotXY.Y && Vector3.Distance(_RobotXYZ, _BallXYZ) < _Robot.radius + _Game.ball.radius + fallbackBallAvoidDist) //TODO avoid falling ball
+            if (accel.Y < 0 && _BallXY.Y < _RobotXY.Y && Vector2.Distance(_RobotXY, _BallXY) < _Robot.radius + _Game.ball.radius + fallbackBallAvoidDist) //TODO avoid falling ball
             {
-                var cos = Vector2.Dot(ballPos, accel) / (ballPos.Length() * accel.Length());
-                const double maxAvoidAngleCos = 0.75;
-                if (cos > maxAvoidAngleCos)
+                const float dt = 1;
+
+                var ballZAfterDt = _BallXYZ.Z + _BallVel.Z * dt - (float)_Rules.GRAVITY * dt * dt / 2;
+                if (ballZAfterDt < _Rules.BALL_RADIUS + _Robot.radius + 1)//TODO 1
                 {
-                    var goalPos = TransformToRobotSpace(_TeamGoalXY);
+                    var cos = Vector2.Dot(ballPos, accel) / (ballPos.Length() * accel.Length());
+                    const double maxAvoidAngleCos = 0.75;
+                    if (cos > maxAvoidAngleCos)
+                    {
+                        var goalPos = TransformToRobotSpace(_TeamGoalXY);
 
-                    var cross = Vector3.Cross(new Vector3(ballPos, 0), new Vector3(goalPos, 0));
+                        var cross = Vector3.Cross(new Vector3(ballPos, 0), new Vector3(goalPos, 0));
 
-                    const float avoidAngleRad = 0.733f;
-                    accel = Vector2.Transform(accel, Matrix3x2.CreateRotation(System.Math.Sign(cross.Z) * avoidAngleRad));
+                        const float avoidAngleRad = 0.733f;
+                        accel = Vector2.Transform(accel, Matrix3x2.CreateRotation(System.Math.Sign(cross.Z) * avoidAngleRad));
+                    }
                 }
             }
             else if (_RobotXY.Y < -_Rules.arena.depth / 2 - _Robot.radius)
