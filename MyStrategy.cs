@@ -309,10 +309,11 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private ITurn MakePath(Vector2 accel)
         {
+            var ballPos = TransformToRobotSpace(_BallXY);
+
             const int fallbackBallAvoidDist = 1;
             if (accel.Y < 0 && _BallXY.Y < _RobotXY.Y && Vector3.Distance(_RobotXYZ, _BallXYZ) < _Robot.radius + _Game.ball.radius + fallbackBallAvoidDist) //TODO avoid falling ball
             {
-                var ballPos = TransformToRobotSpace(_BallXY);
                 var cos = Vector2.Dot(ballPos, accel) / (ballPos.Length() * accel.Length());
                 const double maxAvoidAngleCos = 0.75;
                 if (cos > maxAvoidAngleCos)
@@ -325,6 +326,8 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                     accel = Vector2.Transform(accel, Matrix3x2.CreateRotation(System.Math.Sign(cross.Z) * avoidAngleRad));
                 }
             }
+            else if (_RobotXY.Y < -_Rules.arena.depth / 2 - _Robot.radius)
+                accel += _Acceleration * Vector2.Normalize(ballPos);
 
             return new MoveTurn(accel);
         }
