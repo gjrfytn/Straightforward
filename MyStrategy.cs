@@ -114,7 +114,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
                     var dot = Vector3.Dot(ballToRobot, ballToGoal) / ballToGoal.Length();
 
-                    const float touchDist = 3;
+                    const float touchDist = 2.95f;
                     const int requiredVelDiff = 20;
                     if (dot < 0 && Vector3.Distance(robotPos, ballPos) < touchDist && (robotVel - ballVel).Length() > requiredVelDiff)
                         return new JumpTurn(_JumpSpeed);
