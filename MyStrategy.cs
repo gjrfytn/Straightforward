@@ -106,7 +106,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                                                GetJumpHeight(dt));
 
                     var robotVel = new Vector3(currentRobotVel, GetJumpVelocity(dt));
-                    var ballVel = new Vector3(_BallVel.X, _BallVel.Y, (float)(_BallVel.Z - _Rules.GRAVITY * dt) * 0.25f); //TODO 0.25f
+                    var ballVel = new Vector3(_BallVel.X, _BallVel.Y, (float)(_BallVel.Z - _Rules.GRAVITY * dt) * 0.75f); //TODO 0.25f
 
                     var goalAimHeight = (float)_Rules.arena.goal_height / 4;
                     var ballToGoal = new Vector3(_EnemyGoalXY, goalAimHeight) - ballPos;
@@ -114,7 +114,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
                     var dot = Vector3.Dot(ballToRobot, ballToGoal) / ballToGoal.Length();
 
-                    const float touchDist = 2.95f;
+                    const float touchDist = 2.98f;
                     const int requiredVelDiff = 20;
                     if (dot < 0 && Vector3.Distance(robotPos, ballPos) < touchDist && (robotVel - ballVel).Length() > requiredVelDiff)
                         return new JumpTurn(_JumpSpeed);
