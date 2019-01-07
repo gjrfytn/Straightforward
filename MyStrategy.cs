@@ -106,7 +106,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                                                GetJumpHeight(dt));
 
                     var robotVel = new Vector3(currentRobotVel, GetJumpVelocity(dt));
-                    var ballVel = new Vector3(_BallVel.X, _BallVel.Y, (float)(_BallVel.Z - _Rules.GRAVITY * dt));
+                    var ballVel = new Vector3(_BallVel.X, _BallVel.Y, (float)(_BallVel.Z - _Rules.GRAVITY * dt) * 0.25f); //TODO 0.25f
 
                     var goalAimHeight = (float)_Rules.arena.goal_height / 4;
                     var ballToGoal = new Vector3(_EnemyGoalXY, goalAimHeight) - ballPos;
