@@ -127,8 +127,8 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         private Vector3 GetBallPosDt(float dt)
         {
             var pos = _BallXYZ + new Vector3(_BallVel.X * dt,
-                                              _BallVel.Y * dt,
-                                              (float)(_BallVel.Z * dt - _Rules.GRAVITY * dt * dt / 2));
+                                             _BallVel.Y * dt,
+                                             (float)(_BallVel.Z * dt - _Rules.GRAVITY * dt * dt / 2));
 
             var rightWall = (float)_Rules.arena.width / 2;
             var leftWall = -rightWall;
@@ -145,10 +145,30 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             var enemyGoalShrinkValue = 0.5f;
 
             //TODO Refactor
-            if (pos.Y + ballRadius > frontWall && (pos.X < -_Rules.arena.goal_width / 2 + enemyGoalShrinkValue || pos.X > _Rules.arena.goal_width / 2 - enemyGoalShrinkValue || pos.Z > _Rules.arena.goal_height - enemyGoalShrinkValue)) //TODO Искусственно уменьшать зону ворот для обнаружения возможных отскоков?
-                pos.Y = frontWall - ballRadius - wallDampingCoef * (pos.Y + ballRadius - frontWall);
-            else if (pos.Y - ballRadius < backWall && (pos.X < -_Rules.arena.goal_width / 2 || pos.X > _Rules.arena.goal_width / 2 || pos.Z > _Rules.arena.goal_height))
-                pos.Y = backWall + ballRadius - wallDampingCoef * (pos.Y - ballRadius - backWall);
+            if (pos.Y + ballRadius > frontWall)
+            {
+                var yAtReflection = frontWall - ballRadius;
+                var tAtReflection = (yAtReflection - _BallXYZ.Y) / _BallVel.Y;
+
+                var posAtReflection = _BallXYZ + new Vector3(_BallVel.X * tAtReflection,
+                                                             yAtReflection,
+                                                             (float)(_BallVel.Z * tAtReflection - _Rules.GRAVITY * tAtReflection * tAtReflection / 2));
+
+                if (posAtReflection.X < -_Rules.arena.goal_width / 2 + enemyGoalShrinkValue || posAtReflection.X > _Rules.arena.goal_width / 2 - enemyGoalShrinkValue || posAtReflection.Z > _Rules.arena.goal_height - enemyGoalShrinkValue)
+                    pos.Y = frontWall - ballRadius - wallDampingCoef * (pos.Y + ballRadius - frontWall);
+            }
+            else if (pos.Y - ballRadius < backWall)
+            {
+                var yAtReflection = backWall + ballRadius;
+                var tAtReflection = (yAtReflection - _BallXYZ.Y) / _BallVel.Y;
+
+                var posAtReflection = _BallXYZ + new Vector3(_BallVel.X * tAtReflection,
+                                                             yAtReflection,
+                                                             (float)(_BallVel.Z * tAtReflection - _Rules.GRAVITY * tAtReflection * tAtReflection / 2));
+
+                if (posAtReflection.X < -_Rules.arena.goal_width / 2 || posAtReflection.X > _Rules.arena.goal_width / 2 || posAtReflection.Z > _Rules.arena.goal_height)
+                    pos.Y = backWall + ballRadius - wallDampingCoef * (pos.Y - ballRadius - backWall);
+            }
 
             return pos;
         }
