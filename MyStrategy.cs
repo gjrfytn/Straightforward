@@ -209,16 +209,6 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                     vel.Y = -wallDampingCoef * vel.Y;
                 }
             }
-            if (pos.Y + ballRadius > frontWall && (pos.X < -_Rules.arena.goal_width / 2 + enemyGoalShrinkValue || pos.X > _Rules.arena.goal_width / 2 - enemyGoalShrinkValue || pos.Z > _Rules.arena.goal_height - enemyGoalShrinkValue)) //TODO Искусственно уменьшать зону ворот для обнаружения возможных отскоков?
-            {
-                pos.Y = frontWall - ballRadius - wallDampingCoef * (pos.Y + ballRadius - frontWall);
-                
-            }
-            else if (pos.Y - ballRadius < backWall && (pos.X < -_Rules.arena.goal_width / 2 || pos.X > _Rules.arena.goal_width / 2 || pos.Z > _Rules.arena.goal_height))
-            {
-                pos.Y = backWall + ballRadius - wallDampingCoef * (pos.Y - ballRadius - backWall);
-                vel.Y = -wallDampingCoef * vel.Y;
-            }
 
             return (pos, vel);
         }
