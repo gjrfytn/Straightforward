@@ -95,15 +95,17 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 var initialRobotVel = new Vector2((float)_Robot.velocity_x, (float)_Robot.velocity_z);
                 var initialCollisionVel = GetCollisionVelocity(0, _RobotXYZ, initialRobotVel);
 
+                var chargeTurns = new List<(float weight, ITurn turn)>();
                 const int requiredVelDiff = 20;
+
                 if (initialCollisionVel > requiredVelDiff)
-                    return new JumpTurn(_JumpSpeed);
+                    chargeTurns.Add((initialCollisionVel.Value, new JumpTurn(_JumpSpeed)));
 
                 const float maxPredictionTime = 0.20f;
                 const float dtStep = 0.05f;
                 for (var dt = 0.05f; dt <= maxPredictionTime; dt += dtStep)
                 {
-                    var (ballPos, ballVel) = GetBallParamDt(dt);
+                    var (ballPos, ballVel) = GetBallParamDt(dt + 0.25f);
 
                     var acceleration = (float)_Rules.ROBOT_ACCELERATION * Vector2.Normalize(new Vector2(ballPos.X, ballPos.Y) - _RobotXY); //TODO Учитывать touch_normal?
 
@@ -113,8 +115,11 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                     var colVel = GetCollisionVelocity(dt, currentRobotPos, currentRobotVel);
 
                     if (colVel > requiredVelDiff)
-                        return new MoveTurn(_Acceleration * acceleration); //TODO По идее не нужно умножать.
+                        chargeTurns.Add((colVel.Value - dt * 100, new MoveTurn(_Acceleration * acceleration))); //TODO По идее не нужно умножать.
                 }
+
+                if (chargeTurns.Any())
+                    return chargeTurns.OrderByDescending(t => t.weight).First().turn;
             }
 
             return null;
@@ -153,8 +158,8 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         private (Vector3 pos, Vector3 vel) GetBallParamDt(float dt)
         {
             var pos = _BallXYZ + new Vector3(_BallVel.X * dt,
-                                             _BallVel.Y * dt,
-                                             (float)(_BallVel.Z * dt - _Rules.GRAVITY * dt * dt / 2));
+                                              _BallVel.Y * dt,
+                                              (float)(_BallVel.Z * dt - _Rules.GRAVITY * dt * dt / 2));
 
             var vel = new Vector3(_BallVel.X, _BallVel.Y, (float)(_BallVel.Z - _Rules.GRAVITY * dt) * 0.75f); //TODO 0.75f
 
