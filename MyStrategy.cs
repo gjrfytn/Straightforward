@@ -16,7 +16,6 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         private const float _GoalDangerDistance = 20;
         private const float _BallLandingPredictionMinHeight = 4;
 
-        private static Match _Match;
         private static PhysicsSolver _Physics;
 
         private Robot _Robot;
@@ -45,9 +44,6 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             _Robot = robot;
             _Rules = rules;
             _Game = game;
-
-            if (_Match == null)
-                _Match = new Match(game);
 
             _Physics = new PhysicsSolver(rules);
 
@@ -193,7 +189,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private bool IsThisRobotTheLastHope()
         {
-            if (_RobotXY.Y < _BallXY.Y && _Match.Teammates.Where(r => r.id != _Robot.id).All(r => r.z > _BallXY.Y))
+            if (_RobotXY.Y < _BallXY.Y && _Game.robots.Where(r => r.is_teammate && r.id != _Robot.id).All(r => r.z > _BallXY.Y))
                 return true;
 
             return false;
@@ -201,10 +197,10 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private bool IsThisRobotClosestToBall()
         {
-            var closestRobot = _Match.Teammates
-                                     .Select(r => new { RobotId = r.id, Distance = Vector2.Distance(new Vector2((float)r.x, (float)r.z), _BallXY) })
-                                     .OrderBy(r => r.Distance)
-                                     .First();
+            var closestRobot = _Game.robots.Where(r => r.is_teammate)
+                                           .Select(r => new { RobotId = r.id, Distance = Vector2.Distance(new Vector2((float)r.x, (float)r.z), _BallXY) })
+                                           .OrderBy(r => r.Distance)
+                                           .First();
 
             return closestRobot.RobotId == _Robot.id;
         }
