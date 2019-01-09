@@ -142,45 +142,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             return closestRobot.RobotId == _Robot.id;
         }
 
-        private (Vector2 pos, float dt) GetBallPosAtHeight(float h)
-        {
-            float t = 1;
-            float dt = 1;
-            bool? wasGreater = null;
-            while (true)
-            {
-                var ballXYZ = _Physics.GetBallParamDt(t, _BallXYZ, _BallVel).pos;
 
-                const float errorEpsilon = 0.2f;
-                if (ballXYZ.Z > h - errorEpsilon && ballXYZ.Z < h + errorEpsilon)
-                    return (new Vector2(ballXYZ.X, ballXYZ.Y), t);
-
-                if (ballXYZ.Z > h)
-                {
-                    if (wasGreater.HasValue && !wasGreater.Value)
-                    {
-                        dt /= 2;
-                    }
-
-                    wasGreater = true;
-
-                    t += dt;
-                }
-                else
-                {
-                    if (wasGreater.HasValue && wasGreater.Value)
-                    {
-                        dt /= 2;
-                    }
-
-                    wasGreater = false;
-
-                    t -= dt;
-                }
-            }
-
-            throw new System.Exception("Should not be here.");
-        }
 
         private ITurn PlaySupport()
         {
@@ -202,7 +164,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             if (_BallXYZ.Z > _BallLandingPredictionMinHeight)
             {
                 float dt;
-                (ballPos, dt) = GetBallPosAtHeight((float)_Game.ball.radius);
+                (ballPos, dt) = _Physics.GetBallPosAtHeight((float)_Game.ball.radius, _BallXYZ, _BallVel);
 
                 const float ratio = 0.70f;
                 ballPos = Vector2.Lerp(_BallXY, ballPos, ratio); //TODO Костыль? Изучить.
@@ -264,7 +226,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             Vector2 ballPos;
             if (_BallXYZ.Z > _BallLandingPredictionMinHeight)
             {
-                ballPos = GetBallPosAtHeight((float)_Game.ball.radius).pos;
+                ballPos = _Physics.GetBallPosAtHeight((float)_Game.ball.radius, _BallXYZ, _BallVel).pos;
 
                 if (_BallVel.Y > 0)
                 {

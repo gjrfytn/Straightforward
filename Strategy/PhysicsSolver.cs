@@ -85,5 +85,45 @@ namespace Com.CodeGame.CodeBall2018.Strategy
 
             return (pos, vel);
         }
+
+        public (Vector2 pos, float dt) GetBallPosAtHeight(float h, Vector3 ballPos, Vector3 ballVel) //TODO Заменить получение dt на решение квадратного уравнения (берём больший корень).
+        {
+            float t = 1;
+            float dt = 1;
+            bool? wasGreater = null;
+            while (true)
+            {
+                var ballXYZ = GetBallParamDt(t, ballPos, ballVel).pos;
+
+                const float errorEpsilon = 0.2f;
+                if (ballXYZ.Z > h - errorEpsilon && ballXYZ.Z < h + errorEpsilon)
+                    return (new Vector2(ballXYZ.X, ballXYZ.Y), t);
+
+                if (ballXYZ.Z > h)
+                {
+                    if (wasGreater.HasValue && !wasGreater.Value)
+                    {
+                        dt /= 2;
+                    }
+
+                    wasGreater = true;
+
+                    t += dt;
+                }
+                else
+                {
+                    if (wasGreater.HasValue && wasGreater.Value)
+                    {
+                        dt /= 2;
+                    }
+
+                    wasGreater = false;
+
+                    t -= dt;
+                }
+            }
+
+            throw new System.Exception("Should not be here.");
+        }
     }
 }
