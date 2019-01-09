@@ -14,9 +14,10 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         private const float _Acceleration = 100;
         private const float _JumpSpeed = 100;
         private const float _GoalDangerDistance = 20;
-        private const float _RobotJumpVel = 15.25f;
-        private const float _RobotJumpGravityCorrection = 0.65f;
         private const float _BallLandingPredictionMinHeight = 4;
+
+        private static Match _Match;
+        private static PhysicsSolver _Physics;
 
         private Robot _Robot;
         private Rules _Rules;
@@ -44,12 +45,18 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             _Robot = robot;
             _Rules = rules;
             _Game = game;
+
+            if (_Match == null)
+                _Match = new Match(game);
+
+            _Physics = new PhysicsSolver(rules);
+
             _RobotXY = new Vector2((float)robot.x, (float)robot.z);
-            _RobotXYZ = new Vector3((float)robot.x, (float)robot.z, (float)robot.y);
+            _RobotXYZ = new Vector3(_RobotXY, (float)robot.y);
             _EnemyGoalXY = new Vector2(0, (float)rules.arena.depth / 2) + new Vector2(0, (float)rules.arena.goal_depth / 2);
             _TeamGoalXY = -_EnemyGoalXY;
             _BallXY = new Vector2((float)game.ball.x, (float)game.ball.z);
-            _BallXYZ = new Vector3((float)game.ball.x, (float)game.ball.z, (float)game.ball.y);
+            _BallXYZ = new Vector3(_BallXY, (float)game.ball.y);
             _BallVel = new Vector3((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_z, (float)_Game.ball.velocity_y);
         }
 
@@ -82,9 +89,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             return new EmptyTurn();
         }
 
-        private float GetJumpVelocity(float dt) => _RobotJumpVel - ((float)_Rules.GRAVITY + _RobotJumpGravityCorrection) * dt;
 
-        private float GetJumpHeight(float dt) => _RobotJumpVel * dt - ((float)_Rules.GRAVITY + _RobotJumpGravityCorrection) * dt * dt / 2;
 
         private ITurn TryBlockAir()
         {
@@ -103,10 +108,10 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
                     var robotPos = _RobotXYZ + new Vector3(currentRobotVel.X * dt,
                                                currentRobotVel.Y * dt,
-                                               GetJumpHeight(dt));
+                                               _Physics.GetJumpHeightAfter(dt));
 
-                    var robotVel = new Vector3(currentRobotVel, GetJumpVelocity(dt));
-                    var ballVel = new Vector3(_BallVel.X, _BallVel.Y, (float)(_BallVel.Z - _Rules.GRAVITY * dt) * 0.75f); //TODO 0.25f
+                    var robotVel = new Vector3(currentRobotVel, _Physics.GetJumpVelocityAfter(dt));
+                    var ballVel = new Vector3(_BallVel.X, _BallVel.Y, _Physics.GetZVelAfter(dt, _BallVel.Z) * 0.75f); //TODO онундс рср яйнпнярэ он x х y ме рю 0.25f
 
                     var goalAimHeight = (float)_Rules.arena.goal_height / 4;
                     var ballToGoal = new Vector3(_EnemyGoalXY, goalAimHeight) - ballPos;
@@ -128,7 +133,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         {
             var pos = _BallXYZ + new Vector3(_BallVel.X * dt,
                                              _BallVel.Y * dt,
-                                             (float)(_BallVel.Z * dt - _Rules.GRAVITY * dt * dt / 2));
+                                             _Physics.GetDZAfter(dt, _BallVel.Z));
 
             var rightWall = (float)_Rules.arena.width / 2;
             var leftWall = -rightWall;
@@ -152,7 +157,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
                 var posAtReflection = _BallXYZ + new Vector3(_BallVel.X * tAtReflection,
                                                              yAtReflection,
-                                                             (float)(_BallVel.Z * tAtReflection - _Rules.GRAVITY * tAtReflection * tAtReflection / 2));
+                                                             _Physics.GetDZAfter(tAtReflection, _BallVel.Z));
 
                 if (posAtReflection.X < -_Rules.arena.goal_width / 2 + enemyGoalShrinkValue || posAtReflection.X > _Rules.arena.goal_width / 2 - enemyGoalShrinkValue || posAtReflection.Z > _Rules.arena.goal_height - enemyGoalShrinkValue)
                     pos.Y = frontWall - ballRadius - wallDampingCoef * (pos.Y + ballRadius - frontWall);
@@ -164,7 +169,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
                 var posAtReflection = _BallXYZ + new Vector3(_BallVel.X * tAtReflection,
                                                              yAtReflection,
-                                                             (float)(_BallVel.Z * tAtReflection - _Rules.GRAVITY * tAtReflection * tAtReflection / 2));
+                                                             _Physics.GetDZAfter(tAtReflection, _BallVel.Z));
 
                 if (posAtReflection.X < -_Rules.arena.goal_width / 2 || posAtReflection.X > _Rules.arena.goal_width / 2 || posAtReflection.Z > _Rules.arena.goal_height)
                     pos.Y = backWall + ballRadius - wallDampingCoef * (pos.Y - ballRadius - backWall);
@@ -175,7 +180,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private bool IsThisRobotTheLastHope()
         {
-            if (_RobotXY.Y < _BallXY.Y && _Game.robots.Where(r => r.is_teammate && r.id != _Robot.id).All(r => r.z > _BallXY.Y))
+            if (_RobotXY.Y < _BallXY.Y && _Match.Teammates.Where(r => r.id != _Robot.id).All(r => r.z > _BallXY.Y))
                 return true;
 
             return false;
@@ -183,10 +188,10 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
         private bool IsThisRobotClosestToBall()
         {
-            var closestRobot = _Game.robots.Where(r => r.is_teammate)
-                                          .Select(r => new { RobotId = r.id, Distance = Vector2.Distance(new Vector2((float)r.x, (float)r.z), _BallXY) })
-                                          .OrderBy(r => r.Distance)
-                                          .First();
+            var closestRobot = _Match.Teammates
+                                     .Select(r => new { RobotId = r.id, Distance = Vector2.Distance(new Vector2((float)r.x, (float)r.z), _BallXY) })
+                                     .OrderBy(r => r.Distance)
+                                     .First();
 
             return closestRobot.RobotId == _Robot.id;
         }
@@ -268,7 +273,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             var fromEnemyGoalToBall = ballPos - _EnemyGoalXY;
             const int antiGoalVectorLength = 15;
             var antiGoalDirectionB = antiGoalVectorLength * Vector2.Normalize(fromEnemyGoalToBall);
-            var ballVel = new Vector2((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_z);
+            var ballVel = new Vector2(_BallVel.X, _BallVel.Y);
             var normal = GetNormal(antiGoalDirectionB);
             var ballVelProjected = Vector2.Dot(ballVel, normal) * normal;
             var ballPosDirectionB = antiGoalDirectionB + ballVelProjected;
@@ -335,7 +340,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             {
                 const float dt = 1;
 
-                var ballZAfterDt = _BallXYZ.Z + _BallVel.Z * dt - (float)_Rules.GRAVITY * dt * dt / 2;
+                var ballZAfterDt = _BallXYZ.Z + _Physics.GetDZAfter(dt, _BallVel.Z);
                 if (ballZAfterDt < _Rules.BALL_RADIUS + _Robot.radius + 1)//TODO 1
                 {
                     var cos = Vector2.Dot(ballPos, accel) / (ballPos.Length() * accel.Length());
