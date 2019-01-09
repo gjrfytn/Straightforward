@@ -104,14 +104,13 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 const float dtStep = 0.05f;
                 for (var dt = minReactionTime; dt <= maxReactionTime; dt += dtStep)
                 {
-                    var ballPos = GetBallPosDt(dt);
+                    var (ballPos, ballVel) = GetBallParamDt(dt);
 
                     var robotPos = _RobotXYZ + new Vector3(currentRobotVel.X * dt,
                                                currentRobotVel.Y * dt,
                                                _Physics.GetJumpHeightAfter(dt));
 
                     var robotVel = new Vector3(currentRobotVel, _Physics.GetJumpVelocityAfter(dt));
-                    var ballVel = new Vector3(_BallVel.X, _BallVel.Y, _Physics.GetZVelAfter(dt, _BallVel.Z) * 0.75f); //TODO онундс рср яйнпнярэ он x х y ме рю 0.25f
 
                     var goalAimHeight = (float)_Rules.arena.goal_height / 4;
                     var ballToGoal = new Vector3(_EnemyGoalXY, goalAimHeight) - ballPos;
@@ -129,11 +128,13 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             return null;
         }
 
-        private Vector3 GetBallPosDt(float dt)
+        private (Vector3 pos, Vector3 vel) GetBallParamDt(float dt)
         {
             var pos = _BallXYZ + new Vector3(_BallVel.X * dt,
-                                             _BallVel.Y * dt,
-                                             _Physics.GetDZAfter(dt, _BallVel.Z));
+                                              _BallVel.Y * dt,
+                                              _Physics.GetDZAfter(dt, _BallVel.Z));
+
+            var vel = new Vector3(_BallVel.X, _BallVel.Y, _Physics.GetZVelAfter(dt, _BallVel.Z) * 0.75f); //TODO 0.75f
 
             var rightWall = (float)_Rules.arena.width / 2;
             var leftWall = -rightWall;
@@ -141,9 +142,15 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             var ballRadius = (float)_Rules.BALL_RADIUS;
 
             if (pos.X + ballRadius > rightWall)
+            {
                 pos.X = rightWall - ballRadius - wallDampingCoef * (pos.X + ballRadius - rightWall);
+                vel.X = -wallDampingCoef * vel.X;
+            }
             else if (pos.X - ballRadius < leftWall)
+            {
                 pos.X = leftWall + ballRadius - wallDampingCoef * (pos.X - ballRadius - leftWall);
+                vel.X = -wallDampingCoef * vel.X;
+            }
 
             var frontWall = (float)_Rules.arena.depth / 2;
             var backWall = -frontWall;
@@ -160,7 +167,10 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                                                              _Physics.GetDZAfter(tAtReflection, _BallVel.Z));
 
                 if (posAtReflection.X < -_Rules.arena.goal_width / 2 + enemyGoalShrinkValue || posAtReflection.X > _Rules.arena.goal_width / 2 - enemyGoalShrinkValue || posAtReflection.Z > _Rules.arena.goal_height - enemyGoalShrinkValue)
+                {
                     pos.Y = frontWall - ballRadius - wallDampingCoef * (pos.Y + ballRadius - frontWall);
+                    vel.Y = -wallDampingCoef * vel.Y;
+                }
             }
             else if (pos.Y - ballRadius < backWall)
             {
@@ -172,10 +182,13 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                                                              _Physics.GetDZAfter(tAtReflection, _BallVel.Z));
 
                 if (posAtReflection.X < -_Rules.arena.goal_width / 2 || posAtReflection.X > _Rules.arena.goal_width / 2 || posAtReflection.Z > _Rules.arena.goal_height)
+                {
                     pos.Y = backWall + ballRadius - wallDampingCoef * (pos.Y - ballRadius - backWall);
+                    vel.Y = -wallDampingCoef * vel.Y;
+                }
             }
 
-            return pos;
+            return (pos, vel);
         }
 
         private bool IsThisRobotTheLastHope()
@@ -203,7 +216,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             bool? wasGreater = null;
             while (true)
             {
-                var ballXYZ = GetBallPosDt(t);
+                var ballXYZ = GetBallParamDt(t).pos;
 
                 const float errorEpsilon = 0.2f;
                 if (ballXYZ.Z > h - errorEpsilon && ballXYZ.Z < h + errorEpsilon)
