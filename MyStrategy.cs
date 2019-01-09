@@ -100,7 +100,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 const float dtStep = 0.05f;
                 for (var dt = minReactionTime; dt <= maxReactionTime; dt += dtStep)
                 {
-                    var (ballPos, ballVel) = GetBallParamDt(dt);
+                    var (ballPos, ballVel) = _Physics.GetBallParamDt(dt, _BallXYZ, _BallVel);
 
                     var robotPos = _RobotXYZ + new Vector3(currentRobotVel.X * dt,
                                                currentRobotVel.Y * dt,
@@ -116,75 +116,12 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
                     const float touchDist = 2.98f;
                     const int requiredVelDiff = 20;
-                    if (dot < 0 && Vector3.Distance(robotPos, ballPos) < touchDist && (robotVel - ballVel).Length() > requiredVelDiff)
+                    if (dot < 0 && Vector3.Distance(robotPos, ballPos) < touchDist && (robotVel - new Vector3(ballVel.X, ballVel.Y, 0.75f * ballVel.Z)).Length() > requiredVelDiff)//TODO 0.75f
                         return new JumpTurn(_JumpSpeed);
                 }
             }
 
             return null;
-        }
-
-        private (Vector3 pos, Vector3 vel) GetBallParamDt(float dt)
-        {
-            var pos = _BallXYZ + new Vector3(_BallVel.X * dt,
-                                              _BallVel.Y * dt,
-                                              _Physics.GetDZAfter(dt, _BallVel.Z));
-
-            var vel = new Vector3(_BallVel.X, _BallVel.Y, _Physics.GetZVelAfter(dt, _BallVel.Z) * 0.75f); //TODO 0.75f
-
-            var rightWall = (float)_Rules.arena.width / 2;
-            var leftWall = -rightWall;
-            const float wallDampingCoef = 0.7f;
-            var ballRadius = (float)_Rules.BALL_RADIUS;
-
-            if (pos.X + ballRadius > rightWall)
-            {
-                pos.X = rightWall - ballRadius - wallDampingCoef * (pos.X + ballRadius - rightWall);
-                vel.X = -wallDampingCoef * vel.X;
-            }
-            else if (pos.X - ballRadius < leftWall)
-            {
-                pos.X = leftWall + ballRadius - wallDampingCoef * (pos.X - ballRadius - leftWall);
-                vel.X = -wallDampingCoef * vel.X;
-            }
-
-            var frontWall = (float)_Rules.arena.depth / 2;
-            var backWall = -frontWall;
-            var enemyGoalShrinkValue = 0.5f;
-
-            //TODO Refactor
-            if (pos.Y + ballRadius > frontWall)
-            {
-                var yAtReflection = frontWall - ballRadius;
-                var tAtReflection = (yAtReflection - _BallXYZ.Y) / _BallVel.Y;
-
-                var posAtReflection = _BallXYZ + new Vector3(_BallVel.X * tAtReflection,
-                                                             yAtReflection,
-                                                             _Physics.GetDZAfter(tAtReflection, _BallVel.Z));
-
-                if (posAtReflection.X < -_Rules.arena.goal_width / 2 + enemyGoalShrinkValue || posAtReflection.X > _Rules.arena.goal_width / 2 - enemyGoalShrinkValue || posAtReflection.Z > _Rules.arena.goal_height - enemyGoalShrinkValue)
-                {
-                    pos.Y = frontWall - ballRadius - wallDampingCoef * (pos.Y + ballRadius - frontWall);
-                    vel.Y = -wallDampingCoef * vel.Y;
-                }
-            }
-            else if (pos.Y - ballRadius < backWall)
-            {
-                var yAtReflection = backWall + ballRadius;
-                var tAtReflection = (yAtReflection - _BallXYZ.Y) / _BallVel.Y;
-
-                var posAtReflection = _BallXYZ + new Vector3(_BallVel.X * tAtReflection,
-                                                             yAtReflection,
-                                                             _Physics.GetDZAfter(tAtReflection, _BallVel.Z));
-
-                if (posAtReflection.X < -_Rules.arena.goal_width / 2 || posAtReflection.X > _Rules.arena.goal_width / 2 || posAtReflection.Z > _Rules.arena.goal_height)
-                {
-                    pos.Y = backWall + ballRadius - wallDampingCoef * (pos.Y - ballRadius - backWall);
-                    vel.Y = -wallDampingCoef * vel.Y;
-                }
-            }
-
-            return (pos, vel);
         }
 
         private bool IsThisRobotTheLastHope()
@@ -212,7 +149,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             bool? wasGreater = null;
             while (true)
             {
-                var ballXYZ = GetBallParamDt(t).pos;
+                var ballXYZ = _Physics.GetBallParamDt(t, _BallXYZ, _BallVel).pos;
 
                 const float errorEpsilon = 0.2f;
                 if (ballXYZ.Z > h - errorEpsilon && ballXYZ.Z < h + errorEpsilon)
