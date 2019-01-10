@@ -83,15 +83,54 @@ namespace Com.CodeGame.CodeBall2018.Strategy
                 }
             }
 
+            var tAtApoapsis = ballVel.Z / (float)_Rules.GRAVITY;
+            if (tAtApoapsis > 0)
+            {
+                var ballApoapsisZ = ballPos.Z + GetDZAfter(tAtApoapsis, ballVel.Z);
+                if (ballApoapsisZ + ballRadius > _Rules.arena.height)
+                {
+                    var zAtReflection = (float)_Rules.arena.height - ballRadius;
+                    var tAtReflection = GetDtToReachBallZ(ballPos.Z, zAtReflection, ballVel.Z);
+                    if (dt > tAtReflection)
+                    {
+                        var velAtReflection = GetZVelAfter(tAtReflection, ballVel.Z);
+                        var afterRefectionDt = dt - tAtReflection;
+                        var reflectedVel = -wallDampingCoef * velAtReflection;
+
+                        pos.Z = zAtReflection + GetDZAfter(afterRefectionDt, reflectedVel);
+                        vel.Z = GetZVelAfter(afterRefectionDt, reflectedVel);
+                    }
+                }
+            }
+
             return (pos, vel);
         }
 
         public (Vector2 pos, float dt) GetBallPosAtHeight(float h, Vector3 ballPos, Vector3 ballVel)
         {
             var dt = GetDtToReachBallZ(ballPos.Z, h, ballVel.Z);
-            var ballXYZ = GetBallParamDt(dt, ballPos, ballVel).pos;
 
-            return (new Vector2(ballXYZ.X, ballXYZ.Y), dt);
+            var epsilon = 0.5;
+            var guard = 0;
+            while (true)
+            {
+                var ballXYZ = GetBallParamDt(dt, ballPos, ballVel).pos;
+
+                var error = ballXYZ.Z - h;
+                if (System.Math.Abs(error) < epsilon)
+                    return (new Vector2(ballXYZ.X, ballXYZ.Y), dt);
+
+                dt += error / 100;
+
+                guard++;
+                if (guard == 100)
+                {
+                    dt = GetDtToReachBallZ(ballPos.Z, h, ballVel.Z);
+                    ballXYZ = GetBallParamDt(dt, ballPos, ballVel).pos;
+
+                    return (new Vector2(ballXYZ.X, ballXYZ.Y), dt);
+                }
+            }
         }
 
         private float GetDtToReachBallZ(float currentZ, float targetZ, float velocityZ)
@@ -102,13 +141,12 @@ namespace Com.CodeGame.CodeBall2018.Strategy
 
             var d = b * b - 4 * a * c;
 
-            var dt = (-b - (float)System.Math.Sqrt(d)) / (2 * a);
+            var x1 = (-b - (float)System.Math.Sqrt(d)) / (2 * a);
             var x2 = (-b + (float)System.Math.Sqrt(d)) / (2 * a);
 
-            if (dt < 0)
-                throw new System.Exception();
+            var min = System.Math.Min(x1, x2);
 
-            return dt;
+            return min < 0 ? System.Math.Max(x1, x2) : min;
         }
     }
 }
