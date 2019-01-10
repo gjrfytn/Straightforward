@@ -86,44 +86,29 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             return (pos, vel);
         }
 
-        public (Vector2 pos, float dt) GetBallPosAtHeight(float h, Vector3 ballPos, Vector3 ballVel) //TODO Заменить получение dt на решение квадратного уравнения (берём больший корень).
+        public (Vector2 pos, float dt) GetBallPosAtHeight(float h, Vector3 ballPos, Vector3 ballVel)
         {
-            float t = 1;
-            float dt = 1;
-            bool? wasGreater = null;
-            while (true)
-            {
-                var ballXYZ = GetBallParamDt(t, ballPos, ballVel).pos;
+            var dt = GetDtToReachBallZ(ballPos.Z, h, ballVel.Z);
+            var ballXYZ = GetBallParamDt(dt, ballPos, ballVel).pos;
 
-                const float errorEpsilon = 0.2f;
-                if (ballXYZ.Z > h - errorEpsilon && ballXYZ.Z < h + errorEpsilon)
-                    return (new Vector2(ballXYZ.X, ballXYZ.Y), t);
+            return (new Vector2(ballXYZ.X, ballXYZ.Y), dt);
+        }
 
-                if (ballXYZ.Z > h)
-                {
-                    if (wasGreater.HasValue && !wasGreater.Value)
-                    {
-                        dt /= 2;
-                    }
+        private float GetDtToReachBallZ(float currentZ, float targetZ, float velocityZ)
+        {
+            var a = (float)-_Rules.GRAVITY;
+            var b = 2 * velocityZ;
+            var c = 2 * (currentZ - targetZ);
 
-                    wasGreater = true;
+            var d = b * b - 4 * a * c;
 
-                    t += dt;
-                }
-                else
-                {
-                    if (wasGreater.HasValue && wasGreater.Value)
-                    {
-                        dt /= 2;
-                    }
+            var dt = (-b - (float)System.Math.Sqrt(d)) / (2 * a);
+            var x2 = (-b + (float)System.Math.Sqrt(d)) / (2 * a);
 
-                    wasGreater = false;
+            if (dt < 0)
+                throw new System.Exception();
 
-                    t -= dt;
-                }
-            }
-
-            throw new System.Exception("Should not be here.");
+            return dt;
         }
     }
 }
