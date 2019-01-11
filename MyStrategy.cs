@@ -166,14 +166,8 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 float dt;
                 (ballPos, dt) = _Physics.GetBallPosAtHeight((float)_Game.ball.radius, _BallXYZ, _BallVel);
 
-                const float ratio = 0.70f;
-                ballPos = Vector2.Lerp(_BallXY, ballPos, ratio); //TODO Костыль? Изучить.
-
-                if (_BallVel.Y > 0 && _RobotXY.Y < _BallXY.Y)
-                {
-                    var dist = Vector2.Distance(_RobotXY, _BallXY);
-                    speed = dist / dt;
-                }
+                var dist = Vector2.Distance(_RobotXY, ballPos);
+                speed = dist / dt;
             }
             else
                 ballPos = _BallXY;
@@ -188,11 +182,6 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             var targetPosB = _ForwardPaceDistance * Vector2.Normalize(ballPosDirectionB);
             var targetPosO = targetPosB + ballPos;
             var targetPosR = TransformToRobotSpace(targetPosO);
-
-            const int DecelerationBallMinHeight = 4;
-            const int DecelerationToTargetPosDist = 1;
-            const int DecelerationRate = 10;
-            var normalizer = _BallXYZ.Z > DecelerationBallMinHeight && targetPosR.Length() < DecelerationToTargetPosDist ? DecelerationRate : 1; //TODO Сделать неравномерный разгон.
 
             var accel = speed * Vector2.Normalize(targetPosR);
 
@@ -216,7 +205,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 accel = accel + strafeVel;
             }
 
-            return MakePath(accel / normalizer);
+            return MakePath(accel);
         }
 
         private static Vector2 GetNormal(Vector2 v) => Vector2.Normalize(new Vector2(-v.Y, v.X));
