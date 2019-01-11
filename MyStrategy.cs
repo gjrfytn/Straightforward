@@ -168,6 +168,16 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
                 var dist = Vector2.Distance(_RobotXY, ballPos);
                 speed = dist / dt;
+                if (_RobotXY.Y < ballPos.Y)
+                {
+                    if (speed < _Rules.ROBOT_MAX_GROUND_SPEED - 5)
+                        speed -= 5;
+                }
+                else
+                {
+                    if (speed > 5)
+                        speed += 5;
+                }
             }
             else
                 ballPos = _BallXY;
