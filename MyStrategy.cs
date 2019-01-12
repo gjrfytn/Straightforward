@@ -85,8 +85,6 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             return new EmptyTurn();
         }
 
-
-
         private ITurn TryBlockAir()
         {
             const double ballInterceptionHeight = 2.2;
@@ -142,8 +140,6 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             return closestRobot.RobotId == _Robot.id;
         }
 
-
-
         private ITurn PlaySupport()
         {
             var ballPos = PredictBallPositionForSupport();
@@ -182,13 +178,20 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             else
                 ballPos = _BallXY;
 
-            var fromEnemyGoalToBall = ballPos - _EnemyGoalXY;
-            const int antiGoalVectorLength = 15;
-            var antiGoalDirectionB = antiGoalVectorLength * Vector2.Normalize(fromEnemyGoalToBall);
-            var ballVel = new Vector2(_BallVel.X, _BallVel.Y);
-            var normal = GetNormal(antiGoalDirectionB);
-            var ballVelProjected = Vector2.Dot(ballVel, normal) * normal;
-            var ballPosDirectionB = antiGoalDirectionB + ballVelProjected;
+            Vector2 ballPosDirectionB;
+            if (IsBallAlmostInEnemyGoal(ballPos))
+                ballPosDirectionB = ballPos - (_EnemyGoalXY + 30 * Vector2.UnitY);
+            else
+            {
+                var fromEnemyGoalToBall = ballPos - _EnemyGoalXY;
+                const int antiGoalVectorLength = 15;
+                var antiGoalDirectionB = antiGoalVectorLength * Vector2.Normalize(fromEnemyGoalToBall);
+                var ballVel = new Vector2(_BallVel.X, _BallVel.Y);
+                var normal = GetNormal(antiGoalDirectionB);
+                var ballVelProjected = Vector2.Dot(ballVel, normal) * normal;
+                ballPosDirectionB = antiGoalDirectionB + ballVelProjected;
+            }
+
             var targetPosB = _ForwardPaceDistance * Vector2.Normalize(ballPosDirectionB);
             var targetPosO = targetPosB + ballPos;
             var targetPosR = TransformToRobotSpace(targetPosO);
@@ -297,6 +300,8 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             return null;
         }
 
+        private bool IsBallAlmostInEnemyGoal(Vector2 ballPos) => ballPos.X > -_Rules.arena.goal_width / 2 && ballPos.X < _Rules.arena.goal_width / 2 && ballPos.Y > GetEnemyGoalZoneY(ballPos.X);
+        private float GetEnemyGoalZoneY(float x) => (float)_Rules.arena.depth / 2 + 0.023f * x * x - 10;
         private bool IsGoalInDanger() => Vector2.Distance(_TeamGoalXY, _BallXY) < _GoalDangerDistance;
 
         private Vector2 TransformToRobotSpace(Vector2 v) => v - _RobotXY;
