@@ -83,6 +83,18 @@ namespace Com.CodeGame.CodeBall2018.Strategy
                 }
             }
 
+            if (pos.Z - ballRadius < 0)
+            {
+                var zAtReflection = ballRadius;
+                var tAtReflection = GetDtToReachBallZ(ballPos.Z, zAtReflection, ballVel.Z);
+                var velAtReflection = GetZVelAfter(tAtReflection, ballVel.Z);
+                var afterRefectionDt = dt - tAtReflection;
+                var reflectedVel = -wallDampingCoef * velAtReflection;
+
+                pos.Z = zAtReflection + GetDZAfter(afterRefectionDt, reflectedVel);
+                vel.Z = GetZVelAfter(afterRefectionDt, reflectedVel);
+            }
+
             var tAtApoapsis = ballVel.Z / (float)_Rules.GRAVITY;
             if (tAtApoapsis > 0)
             {
