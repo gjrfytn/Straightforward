@@ -282,7 +282,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             {
                 var strikeDirection = new Vector3(Vector2.Normalize(_BallXY - _RobotXY), 0);
 
-                if (danger)
+                if (!_Robot.touch || danger)
                 {
                     if (strikeDirection.Y > 0)
                         return new JumpTurn(_JumpSpeed);
