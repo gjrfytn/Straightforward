@@ -54,11 +54,17 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             _BallXY = new Vector2((float)game.ball.x, (float)game.ball.z);
             _BallXYZ = new Vector3(_BallXY, (float)game.ball.y);
             _BallVel = new Vector3((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_z, (float)_Game.ball.velocity_y);
+
+            if (_BallVel == Vector3.Zero)
+                _ScoresSum = GetPlayersScore();
         }
 
         private ITurn MakeTurn()
         {
             _Spheres.Clear();
+
+            if (IsSomebodyJustScored())
+                return RunForNitro();
 
             var turn = TryStrike();
 
@@ -80,6 +86,20 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 {
                     return PlaySupport();
                 }
+            }
+
+            return new EmptyTurn();
+        }
+
+        private ITurn RunForNitro()
+        {
+            if (_Game.nitro_packs.Any())
+            {
+                var closestNitro = _Game.nitro_packs.Select(np => new { Pack = np, Pos = new Vector2((float)np.x, (float)np.z) })
+                                                    .OrderBy(np => (np.Pack.respawn_ticks.HasValue ? (np.Pack.respawn_ticks < 3 * _Rules.TICKS_PER_SECOND ? 5 : 100) : 0) + Vector2.Distance(_RobotXY, np.Pos))
+                                                    .First().Pos;
+
+                return new MoveTurn(100 * TransformToRobotSpace(closestNitro), false);
             }
 
             return new EmptyTurn();
@@ -150,7 +170,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             var targetPosR = TransformToRobotSpace(targetPosO);
             var accel = _Acceleration * Vector2.Normalize(targetPosR);
 
-            return MakePath(accel);
+            return MakePath(accel, false);
         }
 
         private ITurn PlayForward()
@@ -198,6 +218,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
             var accel = speed * Vector2.Normalize(targetPosR);
 
+            var useNitro = false;
             if (speed < _Rules.ROBOT_MAX_GROUND_SPEED)
             {
                 var robotToBall = ballPos - _RobotXY;
@@ -217,8 +238,10 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
 
                 accel = accel + strafeVel;
             }
+            else
+                useNitro = true;
 
-            return MakePath(accel);
+            return MakePath(accel, useNitro);
         }
 
         private static Vector2 GetNormal(Vector2 v) => Vector2.Normalize(new Vector2(-v.Y, v.X));
@@ -242,7 +265,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             return ballPos;
         }
 
-        private ITurn MakePath(Vector2 accel)
+        private ITurn MakePath(Vector2 accel, bool useNitro)
         {
             var ballPos = TransformToRobotSpace(_BallXY);
             const int fallbackBallAvoidDist = 1;
@@ -269,7 +292,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             else if (_RobotXY.Y < -_Rules.arena.depth / 2 - _Robot.radius)
                 accel += _Acceleration * Vector2.Normalize(ballPos);
 
-            return new MoveTurn(accel);
+            return new MoveTurn(accel, useNitro);
         }
 
         private ITurn TryStrike()
@@ -301,8 +324,15 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
         }
 
         private bool IsBallAlmostInEnemyGoal(Vector2 ballPos) => ballPos.X > -_Rules.arena.goal_width / 2 && ballPos.X < _Rules.arena.goal_width / 2 && ballPos.Y > GetEnemyGoalZoneY(ballPos.X);
+
         private float GetEnemyGoalZoneY(float x) => (float)_Rules.arena.depth / 2 + 0.023f * x * x - 10;
+
         private bool IsGoalInDanger() => Vector2.Distance(_TeamGoalXY, _BallXY) < _GoalDangerDistance;
+
+        private int _ScoresSum = 0;
+        private bool IsSomebodyJustScored() => _ScoresSum < GetPlayersScore();
+
+        private int GetPlayersScore() => _Game.players[0].score + _Game.players[1].score;
 
         private Vector2 TransformToRobotSpace(Vector2 v) => v - _RobotXY;
         private Vector3 TransformToRobotSpace(Vector3 v) => v - _RobotXYZ;
