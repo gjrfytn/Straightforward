@@ -45,7 +45,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             _Rules = rules;
             _Game = game;
 
-            _Physics = new PhysicsSolver(rules);
+            _Physics = new PhysicsSolver(rules, game);
 
             _RobotXY = new Vector2((float)robot.x, (float)robot.z);
             _RobotXYZ = new Vector3(_RobotXY, (float)robot.y);
@@ -99,6 +99,8 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 for (var dt = minReactionTime; dt <= maxReactionTime; dt += dtStep)
                 {
                     var (ballPos, ballVel) = _Physics.GetBallParamDt(dt, _BallXYZ, _BallVel);
+
+                    _Spheres.Add((ballPos, 0.5f, new Vector3(0, 0, 1)));
 
                     var robotPos = _RobotXYZ + new Vector3(currentRobotVel.X * dt,
                                                currentRobotVel.Y * dt,
@@ -161,6 +163,8 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             {
                 float dt;
                 (ballPos, dt) = _Physics.GetBallPosAtHeight((float)_Game.ball.radius, _BallXYZ, _BallVel);
+
+                _Spheres.Add((new Vector3(ballPos, 0), 0.5f, new Vector3(0, 0, 1)));
 
                 var dist = Vector2.Distance(_RobotXY, ballPos);
                 speed = dist / dt;
@@ -229,6 +233,8 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             if (_BallXYZ.Z > _BallLandingPredictionMinHeight)
             {
                 ballPos = _Physics.GetBallPosAtHeight((float)_Game.ball.radius, _BallXYZ, _BallVel).pos;
+
+                _Spheres.Add((new Vector3(ballPos, 0), 0.5f, new Vector3(0, 0, 1)));
 
                 if (_BallVel.Y > 0)
                 {
