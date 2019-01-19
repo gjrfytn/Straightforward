@@ -37,8 +37,6 @@ namespace Com.CodeGame.CodeBall2018.Strategy
 
         public float GetDZAfter(float dt, float vel0) => (float)(vel0 * dt - _Rules.GRAVITY * dt * dt / 2);
 
-        private Entity ball;
-
         public (Vector3 pos, Vector3 vel) GetBallParamDt(float dt, Vector3 ballPos, Vector3 ballVel)
         {
             if (_BallParametersCache.Any(p => p.dt == dt))
@@ -48,7 +46,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
                 return (parameters.pos, parameters.vel);
             }
 
-            ball = new Entity
+            var ball = new Entity
             {
                 arena_e = (float)_Rules.BALL_ARENA_E,
                 mass = (float)_Rules.BALL_MASS,
@@ -59,7 +57,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
 
             for (var i = 0; i < dt * _Rules.TICKS_PER_SECOND; ++i)
             {
-                tick();
+                Tick(ball);
             }
 
             var pos = new Vector3(ball.position.X, ball.position.Z, ball.position.Y);
@@ -123,7 +121,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             public Vector3 velocity;
         }
 
-        private void collide_entities(Entity a, Entity b)
+        private void CollideEntities(Entity a, Entity b)
         {
             var delta_position = b.position - a.position;
             var distance = delta_position.Length();
@@ -146,10 +144,10 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             }
         }
 
-        private Vector3? collide_with_arena(Entity e)
+        private Vector3? CollideWithArena(Entity e)
         {
-            var (distance, normal) = dan_to_arena(e.position);
-            var penetration = e.radius - distance;
+            var (dist, normal) = DanToArena(e.position);
+            var penetration = e.radius - dist;
             if (penetration > 0)
             {
                 e.position += penetration * normal;
@@ -165,15 +163,15 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             return null;
         }
 
-        private void move(Entity e, float delta_time)
+        private void Move(Entity e, float delta_time)
         {
-            e.velocity = clamp(e.velocity, (float)_Rules.MAX_ENTITY_SPEED);
+            e.velocity = Clamp(e.velocity, (float)_Rules.MAX_ENTITY_SPEED);
             e.position += e.velocity * delta_time;
             e.position.Y -= (float)_Rules.GRAVITY * delta_time * delta_time / 2;
             e.velocity.Y -= (float)_Rules.GRAVITY * delta_time;
         }
 
-        private void update(float delta_time)
+        private void Update(Entity ball, float delta_time)
         {
             //shuffle(robots); //TODO
             //foreach (var robot in _Game.robots)
@@ -219,7 +217,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             //    }
             //}
 
-            move(ball, delta_time);
+            Move(ball, delta_time);
 
             //for (var i = 0; i < _Game.robots.Length; ++i)
             //    for (var j = 0; j < i; ++j)
@@ -238,7 +236,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             //    }
             //}
 
-            collide_with_arena(ball);
+            CollideWithArena(ball);
 
             //if (abs(_Game.ball.position.Z) > _Rules.arena.depth / 2 + _Game.ball.radius) //TODO
             //    goal_scored();
@@ -263,11 +261,11 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             //}
         }
 
-        private void tick()
+        private void Tick(Entity ball)
         {
             var delta_time = 1.0f / _Rules.TICKS_PER_SECOND;
             //for (var _ = 0; _ < _Rules.MICROTICKS_PER_TICK; ++_)
-            update(delta_time/* / _Rules.MICROTICKS_PER_TICK*/);
+            Update(ball, delta_time/* / _Rules.MICROTICKS_PER_TICK*/);
 
             //foreach (var pack in _Game.nitro_packs)
             //{
@@ -280,31 +278,22 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             //}
         }
 
-        private (float distance, Vector3 normal) dan_to_plane(Vector3 point, Vector3 point_on_plane, Vector3 plane_normal)
-        {
-            return (Vector3.Dot(point - point_on_plane, plane_normal), plane_normal);
-        }
+        private (float dist, Vector3 normal) DanToPlane(Vector3 point, Vector3 pointOnPlane, Vector3 plane_normal) => (Vector3.Dot(point - pointOnPlane, plane_normal), plane_normal);
 
-        private (float distance, Vector3 normal) dan_to_sphere_inner(Vector3 point, Vector3 sphere_center, float sphere_radius)
-        {
-            return (sphere_radius - (point - sphere_center).Length(), Vector3.Normalize(sphere_center - point));
-        }
+        private (float dist, Vector3 normal) DanToSphereInner(Vector3 point, Vector3 sphereCenter, float sphereRadius) => (sphereRadius - (point - sphereCenter).Length(), Vector3.Normalize(sphereCenter - point));
 
-        private (float distance, Vector3 normal) dan_to_sphere_outer(Vector3 point, Vector3 sphere_center, float sphere_radius)
-        {
-            return ((point - sphere_center).Length() - sphere_radius, Vector3.Normalize(point - sphere_center));
-        }
+        private (float dist, Vector3 normal) DanToSphereOuter(Vector3 point, Vector3 sphereCenter, float sphereRadius) => ((point - sphereCenter).Length() - sphereRadius, Vector3.Normalize(point - sphereCenter));
 
-        private (float distance, Vector3 normal) dan_to_arena_quarter(Vector3 point)
+        private (float dist, Vector3 normal) DanToArenaQuarter(Vector3 point)
         {
             // Ground
-            var dan = dan_to_plane(point, new Vector3(0, 0, 0), new Vector3(0, 1, 0));
+            var dan = DanToPlane(point, new Vector3(0, 0, 0), new Vector3(0, 1, 0));
             // Ceiling
-            dan = min(dan, dan_to_plane(point, new Vector3(0, (float)_Rules.arena.height, 0), new Vector3(0, -1, 0)));
+            dan = Min(dan, DanToPlane(point, new Vector3(0, (float)_Rules.arena.height, 0), new Vector3(0, -1, 0)));
             // Side x
-            dan = min(dan, dan_to_plane(point, new Vector3((float)_Rules.arena.width / 2, 0, 0), new Vector3(-1, 0, 0)));
+            dan = Min(dan, DanToPlane(point, new Vector3((float)_Rules.arena.width / 2, 0, 0), new Vector3(-1, 0, 0)));
             // Side z (goal)
-            dan = min(dan, dan_to_plane(
+            dan = Min(dan, DanToPlane(
             point,
             new Vector3(0, 0, ((float)_Rules.arena.depth / 2) + (float)_Rules.arena.goal_depth),
             new Vector3(0, 0, -1)));
@@ -319,23 +308,23 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             v.X > 0
             && v.Y > 0
             && v.Length() >= _Rules.arena.goal_top_radius + _Rules.arena.goal_side_radius))
-                dan = min(dan, dan_to_plane(point, new Vector3(0, 0, (float)_Rules.arena.depth / 2), new Vector3(0, 0, -1)));
+                dan = Min(dan, DanToPlane(point, new Vector3(0, 0, (float)_Rules.arena.depth / 2), new Vector3(0, 0, -1)));
             // Side x & ceiling (goal)
             if (point.Z >= (_Rules.arena.depth / 2) + _Rules.arena.goal_side_radius)
             {
                 // x
-                dan = min(dan, dan_to_plane(
+                dan = Min(dan, DanToPlane(
                 point,
                 new Vector3((float)_Rules.arena.goal_width / 2, 0, 0),
                 new Vector3(-1, 0, 0)));
                 // y
-                dan = min(dan, dan_to_plane(point, new Vector3(0, (float)_Rules.arena.goal_height, 0), new Vector3(0, -1, 0)));
+                dan = Min(dan, DanToPlane(point, new Vector3(0, (float)_Rules.arena.goal_height, 0), new Vector3(0, -1, 0)));
             }
 
             // Goal back corners
             //assert _Rules.arena.bottom_radius == _Rules.arena.goal_top_radius //TODO
             if (point.Z > (_Rules.arena.depth / 2) + _Rules.arena.goal_depth - _Rules.arena.bottom_radius)
-                dan = min(dan, dan_to_sphere_inner(
+                dan = Min(dan, DanToSphereInner(
                 point,
                 new Vector3(
                 (float)System.Math.Clamp(
@@ -354,7 +343,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             // Corner
             if (point.X > (_Rules.arena.width / 2) - _Rules.arena.corner_radius
             && point.Z > (_Rules.arena.depth / 2) - _Rules.arena.corner_radius)
-                dan = min(dan, dan_to_sphere_inner(
+                dan = Min(dan, DanToSphereInner(
                 point,
                 new Vector3(
                 ((float)_Rules.arena.width / 2) - (float)_Rules.arena.corner_radius,
@@ -368,7 +357,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             {
                 // Side x
                 if (point.X < (_Rules.arena.goal_width / 2) + _Rules.arena.goal_side_radius)
-                    dan = min(dan, dan_to_sphere_outer(
+                    dan = Min(dan, DanToSphereOuter(
                     point,
                     new Vector3(
                     ((float)_Rules.arena.goal_width / 2) + (float)_Rules.arena.goal_side_radius,
@@ -379,7 +368,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
 
                 // Ceiling
                 if (point.Y < _Rules.arena.goal_height + _Rules.arena.goal_side_radius)
-                    dan = min(dan, dan_to_sphere_outer(
+                    dan = Min(dan, DanToSphereOuter(
                     point,
                     new Vector3(
                     point.X,
@@ -396,7 +385,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
                 if (v2.X > 0 && v2.Y > 0)
                 {
                     var o2 = o + Vector2.Normalize(v2) * (float)(_Rules.arena.goal_top_radius + _Rules.arena.goal_side_radius);
-                    dan = min(dan, dan_to_sphere_outer(
+                    dan = Min(dan, DanToSphereOuter(
                     point,
                     new Vector3(o2.X, o2.Y, ((float)_Rules.arena.depth / 2) + (float)_Rules.arena.goal_side_radius),
                     (float)_Rules.arena.goal_side_radius));
@@ -409,7 +398,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             {
                 // Side x
                 if (point.X > (_Rules.arena.goal_width / 2) - _Rules.arena.goal_top_radius)
-                    dan = min(dan, dan_to_sphere_inner(
+                    dan = Min(dan, DanToSphereInner(
                     point,
                     new Vector3(
                     ((float)_Rules.arena.goal_width / 2) - (float)_Rules.arena.goal_top_radius,
@@ -419,7 +408,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
                     (float)_Rules.arena.goal_top_radius));
                 // Side z
                 if (point.Z > (_Rules.arena.depth / 2) + _Rules.arena.goal_depth - _Rules.arena.goal_top_radius)
-                    dan = min(dan, dan_to_sphere_inner(
+                    dan = Min(dan, DanToSphereInner(
                     point,
                     new Vector3(
                     point.X,
@@ -434,7 +423,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             {
                 // Side x
                 if (point.X > (_Rules.arena.width / 2) - _Rules.arena.bottom_radius)
-                    dan = min(dan, dan_to_sphere_inner(
+                    dan = Min(dan, DanToSphereInner(
                     point,
                     new Vector3(
                     ((float)_Rules.arena.width / 2) - (float)_Rules.arena.bottom_radius,
@@ -446,7 +435,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
                 // Side z
                 if (point.Z > (_Rules.arena.depth / 2) - _Rules.arena.bottom_radius
                 && point.X >= (_Rules.arena.goal_width / 2) + _Rules.arena.goal_side_radius)
-                    dan = min(dan, dan_to_sphere_inner(
+                    dan = Min(dan, DanToSphereInner(
                     point,
                     new Vector3(
                     point.X,
@@ -457,7 +446,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
 
                 // Side z (goal)
                 if (point.Z > (_Rules.arena.depth / 2) + _Rules.arena.goal_depth - _Rules.arena.bottom_radius)
-                    dan = min(dan, dan_to_sphere_inner(
+                    dan = Min(dan, DanToSphereInner(
                     point,
                     new Vector3(
                     point.X,
@@ -476,7 +465,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
                 && v2.Length() < _Rules.arena.goal_side_radius + _Rules.arena.bottom_radius)
                 {
                     var o2 = o + Vector2.Normalize(v2) * ((float)_Rules.arena.goal_side_radius + (float)_Rules.arena.bottom_radius);
-                    dan = min(dan, dan_to_sphere_inner(
+                    dan = Min(dan, DanToSphereInner(
                     point,
                     new Vector3(o2.X, (float)_Rules.arena.bottom_radius, o2.Y),
                     (float)_Rules.arena.bottom_radius));
@@ -485,7 +474,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
                 // Side x (goal)
                 if (point.Z >= (_Rules.arena.depth / 2) + _Rules.arena.goal_side_radius
                 && point.X > (_Rules.arena.goal_width / 2) - _Rules.arena.bottom_radius)
-                    dan = min(dan, dan_to_sphere_inner(
+                    dan = Min(dan, DanToSphereInner(
                     point,
                     new Vector3(
                     ((float)_Rules.arena.goal_width / 2) - (float)_Rules.arena.bottom_radius,
@@ -508,7 +497,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
                     {
                         var n2 = n / dist;
                         var o2 = corner_o + n2 * ((float)_Rules.arena.corner_radius - (float)_Rules.arena.bottom_radius);
-                        dan = min(dan, dan_to_sphere_inner(
+                        dan = Min(dan, DanToSphereInner(
                         point,
                         new Vector3(o2.X, (float)_Rules.arena.bottom_radius, o2.Y),
                         (float)_Rules.arena.bottom_radius));
@@ -521,7 +510,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             {
                 // Side x
                 if (point.X > (_Rules.arena.width / 2) - _Rules.arena.top_radius)
-                    dan = min(dan, dan_to_sphere_inner(
+                    dan = Min(dan, DanToSphereInner(
                     point,
                     new Vector3(
                     ((float)_Rules.arena.width / 2) - (float)_Rules.arena.top_radius,
@@ -532,7 +521,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
 
                 // Side z
                 if (point.Z > (_Rules.arena.depth / 2) - _Rules.arena.top_radius)
-                    dan = min(dan, dan_to_sphere_inner(
+                    dan = Min(dan, DanToSphereInner(
                     point,
                     new Vector3(
                     point.X,
@@ -554,7 +543,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
                     {
                         var n = Vector2.Normalize(dv);
                         var o2 = corner_o + n * ((float)_Rules.arena.corner_radius - (float)_Rules.arena.top_radius);
-                        dan = min(dan, dan_to_sphere_inner(
+                        dan = Min(dan, DanToSphereInner(
                         point,
                         new Vector3(o2.X, (float)_Rules.arena.height - (float)_Rules.arena.top_radius, o2.Y),
                         (float)_Rules.arena.top_radius));
@@ -565,9 +554,9 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             return dan;
         }
 
-        private (float distance, Vector3 normal) min((float distance, Vector3 normal) dn1, (float distance, Vector3 normal) dn2) => dn1.distance < dn2.distance ? dn1 : dn2;
+        private (float dist, Vector3 normal) Min((float dist, Vector3 normal) dn1, (float dist, Vector3 normal) dn2) => dn1.dist < dn2.dist ? dn1 : dn2;
 
-        private (float distance, Vector3 normal) dan_to_arena(Vector3 point)
+        private (float dist, Vector3 normal) DanToArena(Vector3 point)
         {
             var negate_x = point.X < 0;
             var negate_z = point.Z < 0;
@@ -577,7 +566,7 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             if (negate_z)
                 point.Z = -point.Z;
 
-            var result = dan_to_arena_quarter(point);
+            var result = DanToArenaQuarter(point);
             if (negate_x)
                 result.normal.X = -result.normal.X;
 
@@ -587,6 +576,6 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             return result;
         }
 
-        private Vector3 clamp(Vector3 v, float limit) => v.Length() > limit ? limit * Vector3.Normalize(v) : v;//TODO
+        private Vector3 Clamp(Vector3 v, float limit) => v.Length() > limit ? limit * Vector3.Normalize(v) : v;//TODO
     }
 }
