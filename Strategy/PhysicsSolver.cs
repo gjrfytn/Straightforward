@@ -286,10 +286,14 @@ namespace Com.CodeGame.CodeBall2018.Strategy
 
         private (float dist, Vector3 normal) DanToArenaQuarter(Vector3 point)
         {
-            // Ground
-            var dan = DanToPlane(point, new Vector3(0, 0, 0), new Vector3(0, 1, 0));
+            //TODO
+            //// Ground
+            //var dan = DanToPlane(point, new Vector3(0, 0, 0), new Vector3(0, 1, 0));
+            //// Ceiling
+            //dan = Min(dan, DanToPlane(point, new Vector3(0, (float)_Rules.arena.height, 0), new Vector3(0, -1, 0)));
+
             // Ceiling
-            dan = Min(dan, DanToPlane(point, new Vector3(0, (float)_Rules.arena.height, 0), new Vector3(0, -1, 0)));
+            var dan = DanToPlane(point, new Vector3(0, (float)_Rules.arena.height, 0), new Vector3(0, -1, 0));
             // Side x
             dan = Min(dan, DanToPlane(point, new Vector3((float)_Rules.arena.width / 2, 0, 0), new Vector3(-1, 0, 0)));
             // Side z (goal)
