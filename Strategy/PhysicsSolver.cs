@@ -55,10 +55,9 @@ namespace Com.CodeGame.CodeBall2018.Strategy
                 velocity = new Vector3((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_y, (float)_Game.ball.velocity_z)
             };
 
-            for (var i = 0; i < dt * _Rules.TICKS_PER_SECOND; ++i)
-            {
-                Tick(ball);
-            }
+            var step = 1.0f / _Rules.TICKS_PER_SECOND;
+            for (var totalDt = step; totalDt <= dt; totalDt += step)
+                Update(ball, step);
 
             var pos = new Vector3(ball.position.X, ball.position.Z, ball.position.Y);
             var vel = new Vector3(ball.velocity.X, ball.velocity.Z, ball.velocity.Y);
@@ -258,23 +257,6 @@ namespace Com.CodeGame.CodeBall2018.Strategy
             //            pack.respawn_ticks = _Rules.NITRO_PACK_RESPAWN_TICKS;
             //        }
             //    }
-            //}
-        }
-
-        private void Tick(Entity ball)
-        {
-            var delta_time = 1.0f / _Rules.TICKS_PER_SECOND;
-            //for (var _ = 0; _ < _Rules.MICROTICKS_PER_TICK; ++_)
-            Update(ball, delta_time/* / _Rules.MICROTICKS_PER_TICK*/);
-
-            //foreach (var pack in _Game.nitro_packs)
-            //{
-            //    if (pack.alive)
-            //        continue;
-
-            //    pack.respawn_ticks -= 1;
-            //    if (pack.respawn_ticks == 0)
-            //        pack.alive = true;
             //}
         }
 
