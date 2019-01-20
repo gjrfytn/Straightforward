@@ -98,7 +98,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
                 const float dtStep = 0.05f;
                 for (var dt = minReactionTime; dt <= maxReactionTime; dt += dtStep)
                 {
-                    var (ballPos, ballVel) = _Physics.GetBallParamDt(dt, _BallXYZ, _BallVel);
+                    var (ballPos, ballVel) = _Physics.GetBallParamDt(dt);
 
                     _Spheres.Add((ballPos, 0.5f, new Vector3(0, 0, 1)));
 
@@ -162,7 +162,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             if (_BallXYZ.Z > _BallLandingPredictionMinHeight)
             {
                 float dt;
-                (ballPos, dt) = _Physics.GetBallPosAtHeight((float)_Game.ball.radius, _BallXYZ, _BallVel);
+                (ballPos, dt) = _Physics.GetBallPosAtHeight((float)_Game.ball.radius);
 
                 _Spheres.Add((new Vector3(ballPos, 0), 0.5f, new Vector3(0, 0, 1)));
 
@@ -232,7 +232,7 @@ namespace Com.CodeGame.CodeBall2018.DevKit.CSharpCgdk
             Vector2 ballPos;
             if (_BallXYZ.Z > _BallLandingPredictionMinHeight)
             {
-                ballPos = _Physics.GetBallPosAtHeight((float)_Game.ball.radius, _BallXYZ, _BallVel).pos;
+                ballPos = _Physics.GetBallPosAtHeight((float)_Game.ball.radius).pos;
 
                 _Spheres.Add((new Vector3(ballPos, 0), 0.5f, new Vector3(0, 0, 1)));
 

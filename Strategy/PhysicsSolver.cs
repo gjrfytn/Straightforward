@@ -15,6 +15,8 @@ namespace Com.CodeGame.CodeBall2018.Strategy
 
         private readonly Rules _Rules;
         private readonly Game _Game;
+        
+        private float _MaxPredictionDt = 1;
 
         public PhysicsSolver(Rules rules, Game game)
         {
@@ -37,13 +39,60 @@ namespace Com.CodeGame.CodeBall2018.Strategy
 
         public float GetDZAfter(float dt, float vel0) => (float)(vel0 * dt - _Rules.GRAVITY * dt * dt / 2);
 
-        public (Vector3 pos, Vector3 vel) GetBallParamDt(float dt, Vector3 ballPos, Vector3 ballVel)
+        public (Vector3 pos, Vector3 vel) GetBallParamDt(float dt)
         {
-            if (_BallParametersCache.Any(p => p.dt == dt))
+            if (_BallParametersCache.Any())
             {
-                var parameters = _BallParametersCache.First(p => p.dt == dt);
+                var parameters = _BallParametersCache.OrderBy(p => System.Math.Abs(p.dt - dt)).First();
 
                 return (parameters.pos, parameters.vel);
+            }
+
+            Simulate();
+
+            return GetBallParamDt(dt);
+        }
+        
+        public (Vector2 pos, float dt) GetBallPosAtHeight(float h)
+        {
+            if (_BallParametersCache.Any())
+            {
+                var (dt, pos, vel) = _BallParametersCache.OrderBy(p => System.Math.Abs(p.pos.Z - h)).First();
+                if (System.Math.Abs(pos.Z - h) > 0.5f && (dt == _BallParametersCache.First().dt || dt == _BallParametersCache.Last().dt))//TODO 0.5f
+                {
+                    _MaxPredictionDt += 0.5f;
+
+                    Simulate();
+
+                    return GetBallPosAtHeight(h);
+                }
+
+                return (new Vector2(pos.X, pos.Y), dt);
+            }
+
+            Simulate();
+
+            return GetBallPosAtHeight(h);
+        }
+
+        private void Simulate()
+        {
+            Vector3 ballPos;
+            Vector3 ballVel;
+            float initialDt;
+            if (_BallParametersCache.Any())
+            {
+                var (dt, pos, vel) = _BallParametersCache.Last();
+
+                ballPos = new Vector3(pos.X, pos.Z, pos.Y);
+                ballVel = new Vector3(vel.X, vel.Z, vel.Y);
+                initialDt = dt;
+            }
+            else
+            {
+                ballPos = new Vector3((float)_Game.ball.x, (float)_Game.ball.y, (float)_Game.ball.z);
+                ballVel = new Vector3((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_y, (float)_Game.ball.velocity_z);
+                initialDt = 0;
             }
 
             var ball = new Entity
@@ -51,46 +100,19 @@ namespace Com.CodeGame.CodeBall2018.Strategy
                 arena_e = (float)_Rules.BALL_ARENA_E,
                 mass = (float)_Rules.BALL_MASS,
                 radius = (float)_Game.ball.radius,
-                position = new Vector3((float)_Game.ball.x, (float)_Game.ball.y, (float)_Game.ball.z),
-                velocity = new Vector3((float)_Game.ball.velocity_x, (float)_Game.ball.velocity_y, (float)_Game.ball.velocity_z)
+                position = ballPos,
+                velocity = ballVel
             };
 
             var step = 1.0f / _Rules.TICKS_PER_SECOND;
-            for (var totalDt = step; totalDt <= dt; totalDt += step)
+            for (var totalDt = initialDt + step; totalDt <= _MaxPredictionDt; totalDt += step)
+            {
                 Update(ball, step);
 
-            var pos = new Vector3(ball.position.X, ball.position.Z, ball.position.Y);
-            var vel = new Vector3(ball.velocity.X, ball.velocity.Z, ball.velocity.Y);
+                var pos = new Vector3(ball.position.X, ball.position.Z, ball.position.Y);
+                var vel = new Vector3(ball.velocity.X, ball.velocity.Z, ball.velocity.Y);
 
-            _BallParametersCache.Add((dt, pos, vel));
-
-            return (pos, vel);
-        }
-
-        public (Vector2 pos, float dt) GetBallPosAtHeight(float h, Vector3 ballPos, Vector3 ballVel)
-        {
-            var dt = GetDtToReachBallZ(ballPos.Z, h, ballVel.Z);
-
-            var epsilon = 0.5;
-            var guard = 0;
-            while (true)
-            {
-                var ballXYZ = GetBallParamDt(dt, ballPos, ballVel).pos;
-
-                var error = ballXYZ.Z - h;
-                if (System.Math.Abs(error) < epsilon)
-                    return (new Vector2(ballXYZ.X, ballXYZ.Y), dt);
-
-                dt += error / 100;
-
-                guard++;
-                if (guard == 100)
-                {
-                    dt = GetDtToReachBallZ(ballPos.Z, h, ballVel.Z);
-                    ballXYZ = GetBallParamDt(dt, ballPos, ballVel).pos;
-
-                    return (new Vector2(ballXYZ.X, ballXYZ.Y), dt);
-                }
+                _BallParametersCache.Add((totalDt, pos, vel));
             }
         }
 
